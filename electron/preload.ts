@@ -24,6 +24,15 @@ export interface OpenBellAPI {
   ) => Promise<{ success: boolean; recoveryCode: string | null }>;
   fullReset: (password: string | null) => Promise<{ success: boolean; message: string }>;
   openExternal: (url: string) => Promise<void>;
+  // ---- LAN Sync (Multi-PC, no internet needed) -----------------------------
+  lanGetLocalIp: () => Promise<string | null>;
+  lanStartHost: () => Promise<{ running: boolean; port: number; ip: string | null }>;
+  lanStopHost: () => Promise<{ running: boolean }>;
+  lanGetHostStatus: () => Promise<{ running: boolean; port: number; ip: string | null }>;
+  lanTestConnection: (hostIp: string) => Promise<boolean>;
+  lanSyncNow: (hostIp: string) => Promise<{ schedules: number; holidays: number }>;
+  lanStartClientAutoSync: (hostIp: string, intervalMinutes: number) => Promise<void>;
+  lanStopClientAutoSync: () => Promise<void>;
 }
 
 const api: OpenBellAPI = {
@@ -53,6 +62,15 @@ const api: OpenBellAPI = {
   },
   fullReset: (password) => ipcRenderer.invoke('db:fullReset', password),
   openExternal: (url) => ipcRenderer.invoke('app:openExternal', url),
+  lanGetLocalIp: () => ipcRenderer.invoke('lanSync:getLocalIp'),
+  lanStartHost: () => ipcRenderer.invoke('lanSync:startHost'),
+  lanStopHost: () => ipcRenderer.invoke('lanSync:stopHost'),
+  lanGetHostStatus: () => ipcRenderer.invoke('lanSync:getHostStatus'),
+  lanTestConnection: (hostIp) => ipcRenderer.invoke('lanSync:testConnection', hostIp),
+  lanSyncNow: (hostIp) => ipcRenderer.invoke('lanSync:syncNow', hostIp),
+  lanStartClientAutoSync: (hostIp, intervalMinutes) =>
+    ipcRenderer.invoke('lanSync:startClientAutoSync', hostIp, intervalMinutes),
+  lanStopClientAutoSync: () => ipcRenderer.invoke('lanSync:stopClientAutoSync'),
 };
 
 contextBridge.exposeInMainWorld('openbell', api);

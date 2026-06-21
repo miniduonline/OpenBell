@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@/store/useStore';
-import { Check, Copy, ShieldCheck, ShieldOff, ExternalLink, Trash2 } from 'lucide-react';
+import { Check, Copy, ShieldCheck, ShieldOff, ExternalLink, Trash2, Network, RefreshCw } from 'lucide-react';
 import type { Language } from '@/types';
 
 // Page shown when the user clicks "Check for Updates". OpenBell no longer
@@ -116,6 +116,92 @@ export default function Settings() {
     );
     setOutputSavedMsg(true);
     setTimeout(() => setOutputSavedMsg(false), 2000);
+  };
+
+  // ---- LAN Sync (Multi-PC, no internet needed) ------------------------------------
+  type LanMode = 'off' | 'host' | 'client';
+  const [lanMode, setLanMode] = useState<LanMode>('off');
+  const [lanLoaded, setLanLoaded] = useState(false);
+  const [hostIpInput, setHostIpInput] = useState('');
+  const [thisIp, setThisIp] = useState<string | null>(null);
+  const [lanBusy, setLanBusy] = useState(false);
+  const [lanTestResult, setLanTestResult] = useState<'idle' | 'ok' | 'fail'>('idle');
+  const [lanSyncResult, setLanSyncResult] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const modeRow = await window.openbell?.get<SettingRow>(
+        'SELECT value FROM settings WHERE key = ?',
+        ['lan_sync_mode']
+      );
+      const ipRow = await window.openbell?.get<SettingRow>(
+        'SELECT value FROM settings WHERE key = ?',
+        ['lan_sync_host_ip']
+      );
+      if (modeRow?.value) setLanMode(modeRow.value as LanMode);
+      if (ipRow?.value) setHostIpInput(ipRow.value);
+      const ip = await window.openbell?.lanGetLocalIp();
+      setThisIp(ip ?? null);
+      setLanLoaded(true);
+    })();
+  }, []);
+
+  const saveLanSetting = async (key: string, value: string) => {
+    await window.openbell.run(
+      `INSERT INTO settings (key, value, updated_at) VALUES (?, ?, datetime('now'))
+       ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')`,
+      [key, value]
+    );
+  };
+
+  const changeLanMode = async (mode: LanMode) => {
+    setLanMode(mode);
+    setLanTestResult('idle');
+    setLanSyncResult(null);
+    await saveLanSetting('lan_sync_mode', mode);
+
+    if (mode === 'host') {
+      await window.openbell.lanStopClientAutoSync();
+      await window.openbell.lanStartHost();
+    } else if (mode === 'client') {
+      await window.openbell.lanStopHost();
+      if (hostIpInput) {
+        await window.openbell.lanStartClientAutoSync(hostIpInput, 5);
+      }
+    } else {
+      await window.openbell.lanStopHost();
+      await window.openbell.lanStopClientAutoSync();
+    }
+  };
+
+  const saveHostIp = async (ip: string) => {
+    setHostIpInput(ip);
+    await saveLanSetting('lan_sync_host_ip', ip);
+    if (lanMode === 'client' && ip) {
+      await window.openbell.lanStartClientAutoSync(ip, 5);
+    }
+  };
+
+  const testHostConnection = async () => {
+    setLanBusy(true);
+    setLanTestResult('idle');
+    const ok = await window.openbell.lanTestConnection(hostIpInput);
+    setLanTestResult(ok ? 'ok' : 'fail');
+    setLanBusy(false);
+  };
+
+  const syncWithHostNow = async () => {
+    setLanBusy(true);
+    setLanSyncResult(null);
+    try {
+      const result = await window.openbell.lanSyncNow(hostIpInput);
+      setLanSyncResult(
+        t('settings.lanSyncSuccess', { schedules: result.schedules, holidays: result.holidays })
+      );
+    } catch (err) {
+      setLanSyncResult(t('settings.lanSyncFailed'));
+    }
+    setLanBusy(false);
   };
 
   // ---- Password protection -------------------------------------------------------
@@ -345,6 +431,79 @@ export default function Settings() {
           <span className="text-sm text-emerald-600 flex items-center gap-1">
             <Check size={14} /> Saved
           </span>
+        )}
+      </div>
+
+      <div className="card space-y-4">
+        <h2 className="font-semibold flex items-center gap-2">
+          <Network size={18} className={lanMode !== 'off' ? 'text-emerald-600' : 'text-slate-400'} />
+          {t('settings.lanSync')}
+        </h2>
+        <p className="text-xs text-slate-400">{t('settings.lanSyncDesc')}</p>
+
+        <div className="grid grid-cols-3 gap-2">
+          {(['off', 'host', 'client'] as LanMode[]).map((mode) => (
+            <button
+              key={mode}
+              disabled={!lanLoaded}
+              onClick={() => changeLanMode(mode)}
+              className={`px-3 py-2 rounded-lg text-sm font-medium border ${
+                lanMode === mode
+                  ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300'
+                  : 'border-slate-200 dark:border-slate-700 text-slate-500'
+              }`}
+            >
+              {t(`settings.lanMode_${mode}`)}
+            </button>
+          ))}
+        </div>
+
+        {lanMode === 'host' && (
+          <div className="rounded-lg bg-slate-50 dark:bg-slate-800 p-3 text-sm space-y-1">
+            <p className="text-slate-500 dark:text-slate-400">{t('settings.lanHostHint')}</p>
+            <p className="font-mono text-base font-semibold">
+              {thisIp ?? t('settings.lanNoIp')}{' '}
+              <span className="text-slate-400 text-sm">: 47811</span>
+            </p>
+          </div>
+        )}
+
+        {lanMode === 'client' && (
+          <div className="space-y-3">
+            <label className="text-xs text-slate-500 dark:text-slate-400">{t('settings.lanHostIpLabel')}</label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                className="input-field flex-1"
+                placeholder="192.168.1.42"
+                value={hostIpInput}
+                onChange={(e) => setHostIpInput(e.target.value)}
+                onBlur={(e) => saveHostIp(e.target.value)}
+              />
+              <button onClick={testHostConnection} disabled={lanBusy || !hostIpInput} className="btn-secondary">
+                {t('settings.lanTestConnection')}
+              </button>
+            </div>
+            {lanTestResult === 'ok' && (
+              <p className="text-sm text-emerald-600 flex items-center gap-1">
+                <Check size={14} /> {t('settings.lanConnectionOk')}
+              </p>
+            )}
+            {lanTestResult === 'fail' && (
+              <p className="text-sm text-rose-500">{t('settings.lanConnectionFailed')}</p>
+            )}
+
+            <button
+              onClick={syncWithHostNow}
+              disabled={lanBusy || !hostIpInput}
+              className="btn-primary flex items-center gap-2"
+            >
+              <RefreshCw size={14} className={lanBusy ? 'animate-spin' : ''} />
+              {t('settings.lanSyncNow')}
+            </button>
+            {lanSyncResult && <p className="text-sm text-slate-500 dark:text-slate-400">{lanSyncResult}</p>}
+            <p className="text-xs text-slate-400">{t('settings.lanAutoSyncNote')}</p>
+          </div>
         )}
       </div>
 

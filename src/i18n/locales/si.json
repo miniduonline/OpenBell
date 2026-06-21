@@ -48,7 +48,22 @@
     "outputDevice": "Sound Output Device එක",
     "outputDeviceDesc": "Bell ringtone එක play වෙන්න ඕන speaker/output device එක මෙතනින් select කරන්න. \"System default\" දාගෙන තියෙනවනම් Windows එක automatic ව තීරණය කරයි (බොහෝ අයට මේක ගැලපෙයි).",
     "allOutputDevices": "System default (සියලුම devices)",
-    "unnamedDevice": "නම නැති output device එකක්"
+    "unnamedDevice": "නම නැති output device එකක්",
+    "lanSync": "Multi-PC Sync (Local Network)",
+    "lanSyncDesc": "එකම Wi-Fi/network එකේ පරිගණක අතර bell schedules share කරගන්න - internet අවශ්‍ය නැහැ. Schedule edit කරන main office පරිගණකයේ \"Host\" select කරන්න, ඊයි bell එක්ම වදින්න ඕන අනික් සියලුම පරිගණක වල \"Client\" select කරන්න.",
+    "lanMode_off": "Off",
+    "lanMode_host": "Host (Main PC)",
+    "lanMode_client": "Client (Receiver)",
+    "lanHostHint": "Client PC එක් එක්කෙන් Settings → Multi-PC Sync → Client ගිහින් මෙම address එක දාන්න:",
+    "lanNoIp": "Network connection එකක් හමු වුණේ නැහැ",
+    "lanHostIpLabel": "Host PC එකේ address එක (Host PC එකේ Settings page එකේ පේනවා)",
+    "lanTestConnection": "Connection Test කරන්න",
+    "lanConnectionOk": "Connected! Host PC එක reachable.",
+    "lanConnectionFailed": "ඒ address එකට connect වෙන්න බැරි උනා. පරිගණක දෙකම එකම network එකේ ඉන්නවද, Host PC එකේ OpenBell open ද බලන්න.",
+    "lanSyncNow": "දැන් Sync කරන්න",
+    "lanSyncSuccess": "Host එකෙන් schedules {{schedules}} ක් සහ holidays {{holidays}} ක් sync උනා.",
+    "lanSyncFailed": "Sync fail උනා. Host address එක සහ network connection එක check කරන්න.",
+    "lanAutoSyncNote": "මේ පරිගණකය background එකේ Host එකෙන් 5 minutes කට වරක් automatic ව sync වෙයි. Note: sound files transfer වෙන්නේ නැහැ - එකම sound file name එක්ම සියලුම PCs වල upload කරගන්න."
   },
   "support": {
     "intro": "OpenBell එක්ක උදව්වක් ඕනේද? පහත සම්බන්ධතා විස්තර භාවිතා කරලා සෘජුවම developer ව සම්බන්ධ කරගන්න.",

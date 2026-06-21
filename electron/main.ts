@@ -5,6 +5,16 @@ import { initDatabase, getDb, closeDatabase } from './database/db';
 import { startScheduler, stopScheduler } from './services/scheduler';
 import { createBackup, restoreBackup, scheduleAutoBackup } from './services/backupService';
 import { previewSound } from './services/audioPlayer';
+import {
+  startSyncServer,
+  stopSyncServer,
+  isSyncServerRunning,
+  getLocalIp,
+  pingHost,
+  syncNow as lanSyncNow,
+  startClientAutoSync,
+  stopClientAutoSync,
+} from './services/lanSync';
 import { writeLog } from './services/logger';
 import {
   isPasswordEnabled,
@@ -241,6 +251,40 @@ function registerIpcHandlers(): void {
     return result.filePath;
   });
 
+  // ---- LAN Sync (Multi-PC, no internet needed) -----------------------------------
+  // See electron/services/lanSync.ts for the full design notes.
+  const LAN_SYNC_PORT = 47811;
+
+  ipcMain.handle('lanSync:getLocalIp', () => getLocalIp());
+
+  ipcMain.handle('lanSync:startHost', async () => {
+    await startSyncServer(LAN_SYNC_PORT);
+    return { running: true, port: LAN_SYNC_PORT, ip: getLocalIp() };
+  });
+
+  ipcMain.handle('lanSync:stopHost', () => {
+    stopSyncServer();
+    return { running: false };
+  });
+
+  ipcMain.handle('lanSync:getHostStatus', () => ({
+    running: isSyncServerRunning(),
+    port: LAN_SYNC_PORT,
+    ip: getLocalIp(),
+  }));
+
+  ipcMain.handle('lanSync:testConnection', (_e, hostIp: string) => pingHost(hostIp, LAN_SYNC_PORT));
+
+  ipcMain.handle('lanSync:syncNow', (_e, hostIp: string) => lanSyncNow(hostIp, LAN_SYNC_PORT));
+
+  ipcMain.handle('lanSync:startClientAutoSync', (_e, hostIp: string, intervalMinutes: number) => {
+    startClientAutoSync(hostIp, LAN_SYNC_PORT, intervalMinutes);
+  });
+
+  ipcMain.handle('lanSync:stopClientAutoSync', () => {
+    stopClientAutoSync();
+  });
+
   // ---- App info -----------------------------------------------------------------
   ipcMain.handle('app:getVersion', () => app.getVersion());
 
@@ -427,6 +471,32 @@ app.whenReady().then(() => {
 
   writeLog('info', 'system', `OpenBell application started v${app.getVersion()}`);
 
+  // Resume whichever LAN Sync role (Host/Client) was last configured in
+  // Settings, so it keeps working across app restarts without the user
+  // needing to re-enable it every time.
+  try {
+    const db = getDb();
+    const modeRow = db.prepare(`SELECT value FROM settings WHERE key = 'lan_sync_mode'`).get() as
+      | { value?: string }
+      | undefined;
+    const mode = modeRow?.value ?? 'off';
+
+    if (mode === 'host') {
+      startSyncServer(47811).catch((err) =>
+        writeLog('error', 'system', `Could not start LAN sync host server: ${String(err)}`)
+      );
+    } else if (mode === 'client') {
+      const ipRow = db.prepare(`SELECT value FROM settings WHERE key = 'lan_sync_host_ip'`).get() as
+        | { value?: string }
+        | undefined;
+      if (ipRow?.value) {
+        startClientAutoSync(ipRow.value, 47811, 5);
+      }
+    }
+  } catch (err) {
+    writeLog('error', 'system', `LAN sync startup check failed: ${String(err)}`);
+  }
+
   app.on('activate', () => {
     showMainWindow();
   });
@@ -452,6 +522,8 @@ app.on('window-all-closed', () => {
 app.on('before-quit', () => {
   isQuitting = true;
   stopScheduler();
+  stopSyncServer();
+  stopClientAutoSync();
   closeDatabase();
 });
 

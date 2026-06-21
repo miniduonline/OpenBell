@@ -48,7 +48,22 @@
     "outputDevice": "Sound Output Device",
     "outputDeviceDesc": "Choose which speaker/output device bells play through. Leave on \"System default\" to let Windows decide automatically (recommended for most setups).",
     "allOutputDevices": "System default (all devices)",
-    "unnamedDevice": "Unnamed output device"
+    "unnamedDevice": "Unnamed output device",
+    "lanSync": "Multi-PC Sync (Local Network)",
+    "lanSyncDesc": "Share bell schedules between PCs on the same Wi-Fi/network - no internet needed. Pick \"Host\" on the main office PC that you edit schedules on, and \"Client\" on every other PC that should ring the same bells.",
+    "lanMode_off": "Off",
+    "lanMode_host": "Host (Main PC)",
+    "lanMode_client": "Client (Receiver)",
+    "lanHostHint": "On each Client PC, go to Settings → Multi-PC Sync → Client, and enter this address:",
+    "lanNoIp": "No network connection detected",
+    "lanHostIpLabel": "Host PC's address (shown on the Host's Settings page)",
+    "lanTestConnection": "Test Connection",
+    "lanConnectionOk": "Connected! The Host PC is reachable.",
+    "lanConnectionFailed": "Could not reach that address. Make sure both PCs are on the same network and the Host PC's OpenBell is open.",
+    "lanSyncNow": "Sync Now",
+    "lanSyncSuccess": "Synced {{schedules}} schedules and {{holidays}} holidays from the Host.",
+    "lanSyncFailed": "Sync failed. Check the Host address and that both PCs are on the same network.",
+    "lanAutoSyncNote": "This PC will also auto-sync from the Host every 5 minutes in the background. Note: sound files themselves aren't transferred - upload the same sound file names on each PC."
   },
   "support": {
     "intro": "Need help with OpenBell? Reach out to the developer directly using the contact details below.",
