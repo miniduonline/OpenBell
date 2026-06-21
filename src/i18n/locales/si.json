@@ -1,0 +1,61 @@
+{
+  "app": {
+    "name": "OpenBell"
+  },
+  "nav": {
+    "dashboard": "මුල් පිටුව",
+    "schedules": "බෙල් කාලසටහන්",
+    "sounds": "බෙල් ශබ්ද",
+    "holidays": "නිවාඩු දින",
+    "reports": "වාර්තා",
+    "backup": "උපස්ථ",
+    "settings": "සැකසුම්",
+    "support": "සහාය"
+  },
+  "dashboard": {
+    "title": "මුල් පිටුව",
+    "subtitle": "අද දිනයේ බෙල් ක්‍රියාකාරිත්වය",
+    "upcomingBells": "අද එන බෙල් වාර",
+    "systemStatus": "පද්ධති තත්ත්වය",
+    "schedulerRunning": "කාලසටහන් යන්ත්‍රය ක්‍රියාත්මකයි",
+    "totalSchedules": "මුළු කාලසටහන්",
+    "totalSounds": "බෙල් ශබ්ද",
+    "nextBackup": "ඊළඟ ස්වයංක්‍රීය උපස්ථය"
+  },
+  "common": {
+    "add": "එක් කරන්න",
+    "edit": "සංස්කරණය",
+    "delete": "මකන්න",
+    "save": "සුරකින්න",
+    "cancel": "අවලංගු කරන්න",
+    "search": "සොයන්න",
+    "export": "පිටකරන්න",
+    "import": "ආයාත කරන්න",
+    "active": "ක්‍රියාත්මක",
+    "inactive": "අක්‍රීය"
+  },
+  "settings": {
+    "general": "සාමාන්‍ය",
+    "audio": "ශබ්ද",
+    "startup": "ආරම්භය",
+    "theme": "තේමාව",
+    "language": "භාෂාව",
+    "light": "ලයිට්",
+    "dark": "ඩාක්",
+    "startWithOS": "පද්ධතිය සමඟ ආරම්භ කරන්න",
+    "closeToTray": "Window එක close කළත් OpenBell exit වෙන්නේ නැහැ - ඒක system tray එකේ background එකේ run වෙමින් තියෙනවා, ඒ නිසා කාලසටහන් ගත් බෙල් සියල්ල සාමාන්‍ය පරිදි ඇඟවෙනවා.",
+    "outputDevice": "Sound Output Device එක",
+    "outputDeviceDesc": "Bell ringtone එක play වෙන්න ඕන speaker/output device එක මෙතනින් select කරන්න. \"System default\" දාගෙන තියෙනවනම් Windows එක automatic ව තීරණය කරයි (බොහෝ අයට මේක ගැලපෙයි).",
+    "allOutputDevices": "System default (සියලුම devices)",
+    "unnamedDevice": "නම නැති output device එකක්"
+  },
+  "support": {
+    "intro": "OpenBell එක්ක උදව්වක් ඕනේද? පහත සම්බන්ධතා විස්තර භාවිතා කරලා සෘජුවම developer ව සම්බන්ධ කරගන්න.",
+    "developer": "Developer සම්බන්ධතාව",
+    "copyEmail": "Email ලිපිනය copy කරන්න",
+    "helpTitle": "උදව් ලබාගන්නේ කොහොමද",
+    "helpBody": "bug report, feature request, licensing ප්‍රශ්න හෝ වෙනත් support අවශ්‍යතා සඳහා developer ට email කරන්න හෝ පහත website එකට පිවිසෙන්න. issue එකක් report කරන විට ඔබේ OpenBell version එක සඳහන් කරන්න.",
+    "footer": "OpenBell නිර්මාණය සහ නඩත්තු කරනු ලබන්නේ {{name}} විසිනි.",
+    "versionLabel": "Version {{version}}"
+  }
+}

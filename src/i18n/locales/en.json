@@ -1,0 +1,61 @@
+{
+  "app": {
+    "name": "OpenBell"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "schedules": "Bell Schedules",
+    "sounds": "Bell Sounds",
+    "holidays": "Holidays",
+    "reports": "Reports",
+    "backup": "Backup",
+    "settings": "Settings",
+    "support": "Support"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Overview of today's bell activity",
+    "upcomingBells": "Today's Upcoming Bells",
+    "systemStatus": "System Status",
+    "schedulerRunning": "Scheduler Running",
+    "totalSchedules": "Total Schedules",
+    "totalSounds": "Bell Sounds",
+    "nextBackup": "Next Auto Backup"
+  },
+  "common": {
+    "add": "Add",
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "cancel": "Cancel",
+    "search": "Search",
+    "export": "Export",
+    "import": "Import",
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "settings": {
+    "general": "General",
+    "audio": "Audio",
+    "startup": "Startup",
+    "theme": "Theme",
+    "language": "Language",
+    "light": "Light",
+    "dark": "Dark",
+    "startWithOS": "Start with operating system",
+    "closeToTray": "Closing the window doesn't quit OpenBell - it keeps running in the system tray so scheduled bells keep ringing.",
+    "outputDevice": "Sound Output Device",
+    "outputDeviceDesc": "Choose which speaker/output device bells play through. Leave on \"System default\" to let Windows decide automatically (recommended for most setups).",
+    "allOutputDevices": "System default (all devices)",
+    "unnamedDevice": "Unnamed output device"
+  },
+  "support": {
+    "intro": "Need help with OpenBell? Reach out to the developer directly using the contact details below.",
+    "developer": "Developer Contact",
+    "copyEmail": "Copy email address",
+    "helpTitle": "Getting Help",
+    "helpBody": "For bug reports, feature requests, licensing questions, or general support, email the developer or visit the website below. Please include your OpenBell version when reporting an issue.",
+    "footer": "OpenBell is built and maintained by {{name}}.",
+    "versionLabel": "Version {{version}}"
+  }
+}

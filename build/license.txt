@@ -1,0 +1,51 @@
+OpenBell Software License Agreement
+Version 1.9.0
+
+Copyright (c) 2026 Minidu Shashimal Aluthge
+PastelDev
+
+Website: https://minidu.lk
+Email: info@minidu.lk
+Phone: +94 70 238 2336
+
+========================================
+OPENBELL SOFTWARE LICENSE AGREEMENT
+========================================
+
+OpenBell is a free and open-source school bell scheduling system designed for educational institutions and organizations.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, subject to the following conditions:
+
+1. The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+2. Any modified versions of OpenBell must clearly indicate that changes were made and must not misrepresent the original authorship.
+
+3. The names "OpenBell", "PastelDev", and "Minidu Shashimal Aluthge" may not be used to endorse or promote derived products without prior written permission.
+
+4. This software is provided for educational, commercial, and personal use without warranty of any kind.
+
+========================================
+DISCLAIMER
+========================================
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
+
+IN NO EVENT SHALL THE AUTHORS, COPYRIGHT HOLDERS, OR PASTELDEV BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+========================================
+SUPPORT
+========================================
+
+Official Website:
+https://minidu.lk
+
+Support Email:
+info@minidu.lk
+
+Phone:
++94 70 238 2336
+
+Company:
+PastelDev
+
+Thank you for using OpenBell.
