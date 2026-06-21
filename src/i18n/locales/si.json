@@ -20,7 +20,8 @@
     "schedulerRunning": "කාලසටහන් යන්ත්‍රය ක්‍රියාත්මකයි",
     "totalSchedules": "මුළු කාලසටහන්",
     "totalSounds": "බෙල් ශබ්ද",
-    "nextBackup": "ඊළඟ ස්වයංක්‍රීය උපස්ථය"
+    "nextBackup": "ඊළඟ ස්වයංක්‍රීය උපස්ථය",
+    "nextBell": "ඊළඟ බෙල් එක"
   },
   "common": {
     "add": "එක් කරන්න",

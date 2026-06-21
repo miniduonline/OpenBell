@@ -1,14 +1,41 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CalendarClock, Volume2, ShieldCheck, DatabaseBackup } from 'lucide-react';
+import { CalendarClock, Volume2, ShieldCheck, DatabaseBackup, Bell } from 'lucide-react';
 import StatCard from '@/components/Card';
 import type { Schedule } from '@/types';
 import { formatTime, dayName } from '@/utils/format';
+
+// Given a schedule's day_of_week (0=Sun..6=Sat) and "HH:MM" ring_time,
+// returns the next real Date/time this bell will ring (today if it
+// hasn't happened yet, otherwise the next matching weekday).
+function nextOccurrence(dayOfWeek: number, ringTime: string, from: Date): Date {
+  const [h, m] = ringTime.split(':').map(Number);
+  const candidate = new Date(from);
+  const dayDiff = (dayOfWeek - from.getDay() + 7) % 7;
+  candidate.setDate(from.getDate() + dayDiff);
+  candidate.setHours(h, m, 0, 0);
+  if (candidate.getTime() <= from.getTime()) {
+    // Same weekday but time already passed today -> push a full week ahead
+    candidate.setDate(candidate.getDate() + 7);
+  }
+  return candidate;
+}
+
+function formatCountdown(ms: number): string {
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+  const hh = Math.floor(totalSeconds / 3600);
+  const mm = Math.floor((totalSeconds % 3600) / 60);
+  const ss = totalSeconds % 60;
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return hh > 0 ? `${pad(hh)}:${pad(mm)}:${pad(ss)}` : `${pad(mm)}:${pad(ss)}`;
+}
 
 export default function Dashboard() {
   const { t } = useTranslation();
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [soundCount, setSoundCount] = useState(0);
+  const [allActiveSchedules, setAllActiveSchedules] = useState<Schedule[]>([]);
+  const [now, setNow] = useState(new Date());
 
   useEffect(() => {
     const today = new Date().getDay();
@@ -24,7 +51,26 @@ export default function Dashboard() {
       ?.query<{ count: number }>('SELECT COUNT(*) as count FROM sounds')
       .then((rows) => setSoundCount(rows[0]?.count ?? 0))
       .catch(() => setSoundCount(0));
+
+    // Pull every active schedule (any day) once, so we can work out
+    // whichever bell - today or on a later day - is coming up next.
+    window.openbell
+      ?.query<Schedule>('SELECT * FROM schedules WHERE is_active = 1')
+      .then(setAllActiveSchedules)
+      .catch(() => setAllActiveSchedules([]));
   }, []);
+
+  // Tick every second so the countdown stays live.
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const upcoming = allActiveSchedules
+    .map((s) => ({ schedule: s, at: nextOccurrence(s.day_of_week, s.ring_time, now) }))
+    .sort((a, b) => a.at.getTime() - b.at.getTime())[0];
+
+  const isToday = upcoming && upcoming.at.toDateString() === now.toDateString();
 
   return (
     <div className="space-y-6">
@@ -32,6 +78,26 @@ export default function Dashboard() {
         <h1 className="text-2xl font-bold">{t('dashboard.title')}</h1>
         <p className="text-slate-500 dark:text-slate-400">{t('dashboard.subtitle')}</p>
       </div>
+
+      {upcoming && (
+        <div className="card flex items-center gap-4 bg-gradient-to-r from-primary-50 to-transparent dark:from-primary-900/30 dark:to-transparent">
+          <div className="rounded-xl p-3 bg-primary-100 text-primary-600 dark:bg-primary-900/50 dark:text-primary-300">
+            <Bell size={24} />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              {t('dashboard.nextBell')} · {upcoming.schedule.title}
+              {!isToday && <> · {dayName(upcoming.at.getDay())}</>}
+            </p>
+            <p className="text-3xl font-bold font-mono tabular-nums">
+              {formatCountdown(upcoming.at.getTime() - now.getTime())}
+            </p>
+          </div>
+          <span className="font-mono text-sm bg-white/60 dark:bg-slate-700 px-2.5 py-1 rounded-lg self-start">
+            {formatTime(upcoming.schedule.ring_time)}
+          </span>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title={t('dashboard.totalSchedules')} value={schedules.length} icon={CalendarClock} />

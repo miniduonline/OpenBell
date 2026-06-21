@@ -425,7 +425,7 @@ app.whenReady().then(() => {
   createWindow();
   createTray();
 
-  writeLog('info', 'system', 'OpenBell application started v1.9.0');
+  writeLog('info', 'system', `OpenBell application started v${app.getVersion()}`);
 
   app.on('activate', () => {
     showMainWindow();

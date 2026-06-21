@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -27,6 +28,13 @@ const navItems = [
 export default function Sidebar() {
   const { t } = useTranslation();
   const collapsed = useAppStore((s) => s.sidebarCollapsed);
+  // Pulled live from package.json (via Electron's app.getVersion()) so this
+  // never needs to be hand-edited again on future releases.
+  const [appVersion, setAppVersion] = useState('');
+
+  useEffect(() => {
+    window.openbell?.getVersion().then(setAppVersion);
+  }, []);
 
   return (
     <aside
@@ -60,7 +68,7 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      <div className="px-5 py-4 text-xs text-slate-400">{!collapsed && 'OpenBell v1.9.0'}</div>
+      <div className="px-5 py-4 text-xs text-slate-400">{!collapsed && `OpenBell v${appVersion}`}</div>
     </aside>
   );
 }

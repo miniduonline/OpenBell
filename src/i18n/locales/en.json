@@ -20,7 +20,8 @@
     "schedulerRunning": "Scheduler Running",
     "totalSchedules": "Total Schedules",
     "totalSounds": "Bell Sounds",
-    "nextBackup": "Next Auto Backup"
+    "nextBackup": "Next Auto Backup",
+    "nextBell": "Next bell in"
   },
   "common": {
     "add": "Add",
