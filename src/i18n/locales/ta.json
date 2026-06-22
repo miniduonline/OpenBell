@@ -21,7 +21,10 @@
     "totalSchedules": "மொத்த அட்டவணைகள்",
     "totalSounds": "மணி ஒலிகள்",
     "nextBackup": "அடுத்த தானியங்கி காப்புப்பிரதி",
-    "nextBell": "அடுத்த மணி"
+    "nextBell": "அடுத்த மணி",
+    "bellHealthOk": "கடந்த 24 மணி நேரத்தில் அனைத்து மணிகளும் வெற்றிகரமாக ஒலித்தன",
+    "bellHealthFailures": "கடந்த 24 மணி நேரத்தில் {{count}} மணி(கள்) ஒலிக்க தோல்வியடைந்தன",
+    "lastFailureWas": "கடைசி: {{title}} ({{time}})"
   },
   "common": {
     "add": "சேர்க்க",

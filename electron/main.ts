@@ -16,6 +16,7 @@ import {
   stopClientAutoSync,
 } from './services/lanSync';
 import { startViewerServer, stopViewerServer, isViewerServerRunning } from './services/remoteViewer';
+import { confirmBellPlayResult, getBellHealthSummary } from './services/bellHealthMonitor';
 import { writeLog } from './services/logger';
 import {
   isPasswordEnabled,
@@ -304,6 +305,16 @@ function registerIpcHandlers(): void {
     port: VIEWER_PORT,
     ip: getLocalIp(),
   }));
+
+  // ---- Bell Health Monitor (silent-failure detection, fully offline) -------------
+  // Called by the renderer's <audio> element after every actual playback
+  // attempt, success or failure, so the main process can confirm whether
+  // a scheduled bell genuinely made sound or not. See bellHealthMonitor.ts.
+  ipcMain.handle('bellHealth:confirmPlay', (_e, requestId: string, success: boolean, errorMessage?: string) => {
+    confirmBellPlayResult(requestId, success, errorMessage);
+  });
+
+  ipcMain.handle('bellHealth:getSummary', () => getBellHealthSummary());
 
   // ---- App info -----------------------------------------------------------------
   ipcMain.handle('app:copyToClipboard', (_e, text: string) => {

@@ -21,7 +21,10 @@
     "totalSchedules": "Total Schedules",
     "totalSounds": "Bell Sounds",
     "nextBackup": "Next Auto Backup",
-    "nextBell": "Next bell in"
+    "nextBell": "Next bell in",
+    "bellHealthOk": "All bells rang successfully in the last 24 hours",
+    "bellHealthFailures": "{{count}} bell(s) failed to ring in the last 24 hours",
+    "lastFailureWas": "last: {{title}} at {{time}}"
   },
   "common": {
     "add": "Add",

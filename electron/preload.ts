@@ -13,7 +13,7 @@ export interface OpenBellAPI {
   getVersion: () => Promise<string>;
   setLoginItem: (enabled: boolean) => Promise<boolean>;
   getLoginItem: () => Promise<boolean>;
-  onBellPlay: (callback: (data: { filePath: string; volume: number }) => void) => void;
+  onBellPlay: (callback: (data: { requestId?: string; filePath: string; volume: number }) => void) => void;
   authIsEnabled: () => Promise<boolean>;
   authVerify: (password: string) => Promise<boolean>;
   authSetPassword: (newPassword: string) => Promise<{ recoveryCode: string | null }>;
@@ -37,6 +37,14 @@ export interface OpenBellAPI {
   viewerStop: () => Promise<{ running: boolean }>;
   viewerGetStatus: () => Promise<{ running: boolean; port: number; ip: string | null }>;
   copyToClipboard: (text: string) => Promise<void>;
+  confirmBellPlay: (requestId: string, success: boolean, errorMessage?: string) => Promise<void>;
+  getBellHealthSummary: () => Promise<{
+    failuresLast24h: number;
+    lastFailure: { title: string; ringTime: string; reason: string; at: string } | null;
+  }>;
+  onBellHealthAlert: (
+    callback: (data: { title: string; ringTime: string; reason: string; at: string }) => void
+  ) => void;
 }
 
 const api: OpenBellAPI = {
@@ -79,6 +87,13 @@ const api: OpenBellAPI = {
   viewerStop: () => ipcRenderer.invoke('viewer:stop'),
   viewerGetStatus: () => ipcRenderer.invoke('viewer:getStatus'),
   copyToClipboard: (text) => ipcRenderer.invoke('app:copyToClipboard', text),
+  confirmBellPlay: (requestId, success, errorMessage) =>
+    ipcRenderer.invoke('bellHealth:confirmPlay', requestId, success, errorMessage),
+  getBellHealthSummary: () => ipcRenderer.invoke('bellHealth:getSummary'),
+  onBellHealthAlert: (callback) => {
+    ipcRenderer.removeAllListeners('bell:healthAlert');
+    ipcRenderer.on('bell:healthAlert', (_event, data) => callback(data));
+  },
 };
 
 contextBridge.exposeInMainWorld('openbell', api);

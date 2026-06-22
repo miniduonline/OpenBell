@@ -1,7 +1,7 @@
 import cron from 'node-cron';
 import { getDb } from '../database/db';
 import { writeLog } from './logger';
-import { playSound } from './audioPlayer';
+import { ringBellWithConfirmation } from './bellHealthMonitor';
 
 interface ScheduleRow {
   id: number;
@@ -109,8 +109,7 @@ function tick(): void {
 
   for (const schedule of matches) {
     try {
-      playSound(schedule.sound_id);
-      writeLog('info', 'bell', `Bell rang: ${schedule.title}`, { ringTime: currentTime, timeZone }, schedule.id);
+      ringBellWithConfirmation(schedule);
     } catch (err) {
       writeLog('error', 'bell', `Failed to ring bell: ${schedule.title}`, { error: String(err) }, schedule.id);
     }

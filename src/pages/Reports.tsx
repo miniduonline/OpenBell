@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Download } from 'lucide-react';
+import { useEffect, useMemo, useState, Fragment } from 'react';
+import { Download, ChevronDown, ChevronRight, ShieldCheck, ShieldAlert, BellRing } from 'lucide-react';
 import type { LogEntry } from '@/types';
 import { toCSV } from '@/utils/format';
 
@@ -24,16 +24,23 @@ function formatSLT(isoStr: string): string {
   }
 }
 
-/** Returns today's date string in YYYY-MM-DD format in Asia/Colombo timezone. */
 function todaySLT(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Colombo' }).format(new Date());
 }
 
-/** Returns the date string for N days ago in YYYY-MM-DD format in Asia/Colombo timezone. */
 function daysAgoSLT(n: number): string {
   const d = new Date();
   d.setDate(d.getDate() - n);
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Colombo' }).format(d);
+}
+
+function parseMeta(meta?: string | null): Record<string, unknown> {
+  if (!meta) return {};
+  try {
+    return JSON.parse(meta);
+  } catch {
+    return {};
+  }
 }
 
 export default function Reports() {
@@ -44,9 +51,11 @@ export default function Reports() {
   const [fromDate, setFromDate] = useState(sevenDaysAgo);
   const [toDate, setToDate] = useState(today);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [outcomeFilter, setOutcomeFilter] = useState<'all' | 'success' | 'failed'>('all');
+  const [searchText, setSearchText] = useState('');
+  const [expandedId, setExpandedId] = useState<number | null>(null);
 
   const load = (from: string, to: string) => {
-    // toDate is inclusive — extend it to end-of-day for the comparison
     const toEndOfDay = to + ' 23:59:59';
     const fromStart = from + ' 00:00:00';
 
@@ -55,7 +64,7 @@ export default function Reports() {
         `SELECT * FROM logs
          WHERE created_at >= ? AND created_at <= ?
          ORDER BY created_at DESC
-         LIMIT 500`,
+         LIMIT 1000`,
         [fromStart, toEndOfDay]
       )
       .then(setLogs)
@@ -68,8 +77,38 @@ export default function Reports() {
 
   const applyFilter = () => load(fromDate, toDate);
 
-  const filteredLogs =
-    categoryFilter === 'all' ? logs : logs.filter((l) => l.category === categoryFilter);
+  // ---- Bell-specific health stats (the "very advanced" part) -----------------------
+  // Every bell ring (success or failure) is logged under category='bell' by the
+  // Bell Health Monitor (see electron/services/bellHealthMonitor.ts). We derive
+  // a reliability summary directly from those entries, no separate table needed.
+  const bellStats = useMemo(() => {
+    const bellLogs = logs.filter((l) => l.category === 'bell');
+    const failed = bellLogs.filter((l) => l.level === 'error');
+    const success = bellLogs.filter((l) => l.level === 'info');
+    const total = bellLogs.length;
+    const reliability = total > 0 ? Math.round((success.length / total) * 100) : 100;
+
+    const latencies = success
+      .map((l) => parseMeta(l.meta).latencyMs)
+      .filter((v): v is number => typeof v === 'number');
+    const avgLatency =
+      latencies.length > 0 ? Math.round(latencies.reduce((a, b) => a + b, 0) / latencies.length) : null;
+
+    return { total, successCount: success.length, failedCount: failed.length, reliability, avgLatency };
+  }, [logs]);
+
+  const filteredLogs = useMemo(() => {
+    return logs.filter((l) => {
+      if (categoryFilter !== 'all' && l.category !== categoryFilter) return false;
+      if (outcomeFilter === 'success' && l.level !== 'info') return false;
+      if (outcomeFilter === 'failed' && l.level !== 'error') return false;
+      if (searchText.trim()) {
+        const haystack = (l.message + ' ' + (l.meta ?? '')).toLowerCase();
+        if (!haystack.includes(searchText.trim().toLowerCase())) return false;
+      }
+      return true;
+    });
+  }, [logs, categoryFilter, outcomeFilter, searchText]);
 
   const exportCSV = async () => {
     const rows = filteredLogs.map((l) => ({
@@ -95,13 +134,44 @@ export default function Reports() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-2xl font-bold">Reports & Activity Logs</h1>
+        <h1 className="text-2xl font-bold">Reports & Activity Log</h1>
         <button className="btn-secondary flex items-center gap-2" onClick={exportCSV}>
           <Download size={16} /> Export CSV
         </button>
       </div>
 
-      {/* Filter bar */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="card">
+          <p className="text-xs text-slate-400">Bell Reliability</p>
+          <p
+            className={`text-2xl font-bold ${
+              bellStats.reliability === 100 ? 'text-emerald-600' : bellStats.reliability >= 90 ? 'text-amber-600' : 'text-rose-600'
+            }`}
+          >
+            {bellStats.reliability}%
+          </p>
+        </div>
+        <div className="card">
+          <p className="text-xs text-slate-400">Bells Rung OK</p>
+          <p className="text-2xl font-bold flex items-center gap-1.5 text-emerald-600">
+            <ShieldCheck size={18} /> {bellStats.successCount}
+          </p>
+        </div>
+        <div className="card">
+          <p className="text-xs text-slate-400">Bells Failed</p>
+          <p className="text-2xl font-bold flex items-center gap-1.5 text-rose-600">
+            <ShieldAlert size={18} /> {bellStats.failedCount}
+          </p>
+        </div>
+        <div className="card">
+          <p className="text-xs text-slate-400">Avg. Response Time</p>
+          <p className="text-2xl font-bold flex items-center gap-1.5">
+            <BellRing size={18} className="text-slate-400" />
+            {bellStats.avgLatency !== null ? `${bellStats.avgLatency}ms` : '—'}
+          </p>
+        </div>
+      </div>
+
       <div className="card flex flex-wrap gap-3 items-end">
         <div className="flex flex-col gap-1">
           <label className="text-xs text-slate-400">From date (Sri Lanka time)</label>
@@ -139,6 +209,28 @@ export default function Reports() {
             <option value="auth">Auth</option>
           </select>
         </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs text-slate-400">Outcome</label>
+          <select
+            className="input-field"
+            value={outcomeFilter}
+            onChange={(e) => setOutcomeFilter(e.target.value as 'all' | 'success' | 'failed')}
+          >
+            <option value="all">All</option>
+            <option value="success">Success only</option>
+            <option value="failed">Failed only</option>
+          </select>
+        </div>
+        <div className="flex flex-col gap-1 flex-1 min-w-[160px]">
+          <label className="text-xs text-slate-400">Search</label>
+          <input
+            type="text"
+            className="input-field"
+            placeholder="Search message or details..."
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+          />
+        </div>
         <button className="btn-primary" onClick={applyFilter}>
           Apply
         </button>
@@ -148,6 +240,8 @@ export default function Reports() {
             setFromDate(sevenDaysAgo);
             setToDate(today);
             setCategoryFilter('all');
+            setOutcomeFilter('all');
+            setSearchText('');
             load(sevenDaysAgo, today);
           }}
         >
@@ -162,6 +256,7 @@ export default function Reports() {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-slate-400 border-b border-slate-100 dark:border-slate-700">
+              <th className="py-2 pr-2 w-6"></th>
               <th className="py-2 pr-4">Time (SLT)</th>
               <th className="pr-4">Level</th>
               <th className="pr-4">Category</th>
@@ -169,22 +264,50 @@ export default function Reports() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-            {filteredLogs.map((l) => (
-              <tr key={l.id}>
-                <td className="py-2 font-mono text-xs whitespace-nowrap pr-4">
-                  {formatSLT(l.created_at)}
-                </td>
-                <td className={`capitalize pr-4 font-medium ${levelColor(l.level)}`}>
-                  {l.level}
-                </td>
-                <td className="capitalize pr-4">{l.category}</td>
-                <td>{l.message}</td>
-              </tr>
-            ))}
+            {filteredLogs.map((l) => {
+              const meta = parseMeta(l.meta);
+              const hasMeta = Object.keys(meta).length > 0;
+              const isExpanded = expandedId === l.id;
+              return (
+                <Fragment key={l.id}>
+                  <tr
+                    className={hasMeta ? 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50' : ''}
+                    onClick={() => hasMeta && setExpandedId(isExpanded ? null : l.id)}
+                  >
+                    <td className="py-2 pr-2 text-slate-400">
+                      {hasMeta && (isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />)}
+                    </td>
+                    <td className="py-2 font-mono text-xs whitespace-nowrap pr-4">
+                      {formatSLT(l.created_at)}
+                    </td>
+                    <td className={`capitalize pr-4 font-medium ${levelColor(l.level)}`}>
+                      {l.level}
+                    </td>
+                    <td className="capitalize pr-4">{l.category}</td>
+                    <td>{l.message}</td>
+                  </tr>
+                  {isExpanded && hasMeta && (
+                    <tr>
+                      <td></td>
+                      <td colSpan={4} className="pb-3">
+                        <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3 text-xs font-mono space-y-1">
+                          {Object.entries(meta).map(([key, value]) => (
+                            <div key={key} className="flex gap-2">
+                              <span className="text-slate-400 min-w-[110px]">{key}:</span>
+                              <span className="text-slate-700 dark:text-slate-300">{String(value)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
+              );
+            })}
             {filteredLogs.length === 0 && (
               <tr>
-                <td colSpan={4} className="py-8 text-center text-slate-400">
-                  No log entries found for the selected date range.
+                <td colSpan={5} className="py-8 text-center text-slate-400">
+                  No log entries found for the selected filters.
                 </td>
               </tr>
             )}
@@ -192,7 +315,7 @@ export default function Reports() {
         </table>
         {filteredLogs.length > 0 && (
           <p className="text-xs text-slate-400 mt-3 text-right">
-            Showing {filteredLogs.length} {filteredLogs.length === 500 ? '(max 500)' : ''} entries
+            Showing {filteredLogs.length} {filteredLogs.length === 1000 ? '(max 1000)' : ''} entries
           </p>
         )}
       </div>

@@ -59,6 +59,29 @@ function isHoliday(db: ReturnType<typeof getDb>, dateStr: string): boolean {
   return !!row;
 }
 
+function getRecentFailure(db: ReturnType<typeof getDb>) {
+  const since = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString().replace('T', ' ').slice(0, 19);
+  const row = db
+    .prepare(
+      `SELECT message, meta, created_at FROM logs
+       WHERE category = 'bell' AND level = 'error' AND created_at >= ?
+       ORDER BY created_at DESC LIMIT 1`
+    )
+    .get(since) as { message: string; meta: string | null; created_at: string } | undefined;
+  if (!row) return null;
+  let meta: any = {};
+  try {
+    meta = row.meta ? JSON.parse(row.meta) : {};
+  } catch {
+    /* ignore */
+  }
+  return {
+    title: row.message.replace('BELL FAILED TO RING: ', ''),
+    ringTime: meta.ringTime ?? '',
+    reason: meta.reason ?? 'Unknown',
+  };
+}
+
 function buildStatus() {
   const db = getDb();
   const schoolNameRow = db.prepare(`SELECT value FROM settings WHERE key = 'school_name'`).get() as
@@ -85,6 +108,7 @@ function buildStatus() {
     schoolName: schoolNameRow?.value ?? 'My School',
     now: now.toISOString(),
     todayIsHoliday,
+    recentFailure: getRecentFailure(db),
     next: next
       ? {
           title: next.bell.title,
@@ -135,6 +159,7 @@ function renderPage(): string {
   .bell-row:last-child { border-bottom: none; }
   .empty { color: #64748b; font-size: 14px; margin-top: 24px; }
   .updated { margin-top: 24px; font-size: 11px; color: #475569; }
+  .fail-banner { background: #7f1d1d; color: #fecaca; border-radius: 10px; padding: 10px 14px; font-size: 13px; margin-bottom: 20px; text-align: left; }
 </style>
 </head>
 <body>
@@ -167,15 +192,19 @@ async function refresh() {
     document.getElementById('school').textContent = data.schoolName;
 
     const content = document.getElementById('content');
+    let banner = '';
+    if (data.recentFailure) {
+      banner = '<div class="fail-banner">⚠️ <strong>' + data.recentFailure.title + '</strong> did not ring at ' + data.recentFailure.ringTime + '</div>';
+    }
     if (data.todayIsHoliday) {
-      content.innerHTML = '<div class="empty">No school today (holiday)</div>';
+      content.innerHTML = banner + '<div class="empty">No school today (holiday)</div>';
       nextAtMs = null;
     } else if (!data.next) {
-      content.innerHTML = '<div class="empty">No upcoming bells scheduled</div>';
+      content.innerHTML = banner + '<div class="empty">No upcoming bells scheduled</div>';
       nextAtMs = null;
     } else {
       nextAtMs = data.next.atMs;
-      let html = '<div class="label">Next Bell</div>';
+      let html = banner + '<div class="label">Next Bell</div>';
       html += '<div class="bell-title">' + data.next.title + '</div>';
       html += '<div class="countdown" id="countdown">--:--</div>';
       html += '<div class="ring-time">' + data.next.ringTimeDisplay + '</div>';

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CalendarClock, Volume2, ShieldCheck, DatabaseBackup, Bell } from 'lucide-react';
+import { CalendarClock, Volume2, ShieldCheck, DatabaseBackup, Bell, ShieldAlert } from 'lucide-react';
 import StatCard from '@/components/Card';
 import type { Schedule } from '@/types';
 import { formatTime, dayName } from '@/utils/format';
@@ -36,6 +36,20 @@ export default function Dashboard() {
   const [soundCount, setSoundCount] = useState(0);
   const [allActiveSchedules, setAllActiveSchedules] = useState<Schedule[]>([]);
   const [now, setNow] = useState(new Date());
+  const [bellHealth, setBellHealth] = useState<{
+    failuresLast24h: number;
+    lastFailure: { title: string; ringTime: string; reason: string; at: string } | null;
+  } | null>(null);
+
+  useEffect(() => {
+    window.openbell?.getBellHealthSummary().then(setBellHealth).catch(() => setBellHealth(null));
+    // Refresh periodically so the indicator doesn't go stale while the
+    // Dashboard is left open in the background all day.
+    const t = setInterval(() => {
+      window.openbell?.getBellHealthSummary().then(setBellHealth).catch(() => {});
+    }, 60_000);
+    return () => clearInterval(t);
+  }, []);
 
   useEffect(() => {
     const today = new Date().getDay();
@@ -78,6 +92,34 @@ export default function Dashboard() {
         <h1 className="text-2xl font-bold">{t('dashboard.title')}</h1>
         <p className="text-slate-500 dark:text-slate-400">{t('dashboard.subtitle')}</p>
       </div>
+
+      {bellHealth && (
+        <div
+          className={`card flex items-center gap-3 ${
+            bellHealth.failuresLast24h > 0
+              ? 'bg-rose-50 dark:bg-rose-900/20'
+              : 'bg-emerald-50 dark:bg-emerald-900/20'
+          }`}
+        >
+          {bellHealth.failuresLast24h > 0 ? (
+            <ShieldAlert size={20} className="text-rose-600 dark:text-rose-400" />
+          ) : (
+            <ShieldCheck size={20} className="text-emerald-600 dark:text-emerald-400" />
+          )}
+          <div className="text-sm">
+            {bellHealth.failuresLast24h > 0 ? (
+              <span className="text-rose-700 dark:text-rose-300">
+                {t('dashboard.bellHealthFailures', { count: bellHealth.failuresLast24h })}
+                {bellHealth.lastFailure && (
+                  <> — {t('dashboard.lastFailureWas', { title: bellHealth.lastFailure.title, time: bellHealth.lastFailure.ringTime })}</>
+                )}
+              </span>
+            ) : (
+              <span className="text-emerald-700 dark:text-emerald-300">{t('dashboard.bellHealthOk')}</span>
+            )}
+          </div>
+        </div>
+      )}
 
       {upcoming && (
         <div className="card flex items-center gap-4 bg-gradient-to-r from-primary-50 to-transparent dark:from-primary-900/30 dark:to-transparent">
