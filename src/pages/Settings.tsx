@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@/store/useStore';
-import { Check, Copy, ShieldCheck, ShieldOff, ExternalLink, Trash2, Network, RefreshCw } from 'lucide-react';
+import { Check, Copy, ShieldCheck, ShieldOff, ExternalLink, Trash2, Network, RefreshCw, Smartphone } from 'lucide-react';
 import type { Language } from '@/types';
 
 // Page shown when the user clicks "Check for Updates". OpenBell no longer
@@ -202,6 +202,47 @@ export default function Settings() {
       setLanSyncResult(t('settings.lanSyncFailed'));
     }
     setLanBusy(false);
+  };
+
+  // ---- Remote Viewer (read-only phone/tablet web page) ----------------------------
+  const [viewerEnabled, setViewerEnabled] = useState(false);
+  const [viewerLoaded, setViewerLoaded] = useState(false);
+  const [viewerIp, setViewerIp] = useState<string | null>(null);
+  const [viewerCopied, setViewerCopied] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const row = await window.openbell?.get<SettingRow>(
+        'SELECT value FROM settings WHERE key = ?',
+        ['remote_viewer_enabled']
+      );
+      setViewerEnabled(row?.value === 'true');
+      const status = await window.openbell?.viewerGetStatus();
+      setViewerIp(status?.ip ?? null);
+      setViewerLoaded(true);
+    })();
+  }, []);
+
+  const toggleViewer = async (enabled: boolean) => {
+    setViewerEnabled(enabled);
+    await window.openbell.run(
+      `INSERT INTO settings (key, value, updated_at) VALUES ('remote_viewer_enabled', ?, datetime('now'))
+       ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')`,
+      [String(enabled)]
+    );
+    if (enabled) {
+      const status = await window.openbell.viewerStart();
+      setViewerIp(status.ip);
+    } else {
+      await window.openbell.viewerStop();
+    }
+  };
+
+  const copyViewerLink = async () => {
+    if (!viewerIp) return;
+    await window.openbell.copyToClipboard(`http://${viewerIp}:47812`);
+    setViewerCopied(true);
+    setTimeout(() => setViewerCopied(false), 2000);
   };
 
   // ---- Password protection -------------------------------------------------------
@@ -503,6 +544,42 @@ export default function Settings() {
             </button>
             {lanSyncResult && <p className="text-sm text-slate-500 dark:text-slate-400">{lanSyncResult}</p>}
             <p className="text-xs text-slate-400">{t('settings.lanAutoSyncNote')}</p>
+          </div>
+        )}
+      </div>
+
+      <div className="card space-y-4">
+        <h2 className="font-semibold flex items-center gap-2">
+          <Smartphone size={18} className={viewerEnabled ? 'text-emerald-600' : 'text-slate-400'} />
+          {t('settings.remoteViewer')}
+        </h2>
+        <p className="text-xs text-slate-400">{t('settings.remoteViewerDesc')}</p>
+
+        <label className="flex items-center gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={viewerEnabled}
+            disabled={!viewerLoaded}
+            onChange={(e) => toggleViewer(e.target.checked)}
+            className="w-4 h-4"
+          />
+          <span className="text-sm">{t('settings.remoteViewerEnable')}</span>
+        </label>
+
+        {viewerEnabled && (
+          <div className="rounded-lg bg-slate-50 dark:bg-slate-800 p-3 text-sm space-y-2">
+            <p className="text-slate-500 dark:text-slate-400">{t('settings.remoteViewerHint')}</p>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-base font-semibold">
+                {viewerIp ? `http://${viewerIp}:47812` : t('settings.lanNoIp')}
+              </span>
+              {viewerIp && (
+                <button onClick={copyViewerLink} className="text-slate-400 hover:text-slate-600">
+                  {viewerCopied ? <Check size={16} className="text-emerald-600" /> : <Copy size={16} />}
+                </button>
+              )}
+            </div>
+            <p className="text-xs text-slate-400">{t('settings.remoteViewerNoAuth')}</p>
           </div>
         )}
       </div>

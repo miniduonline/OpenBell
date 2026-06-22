@@ -63,7 +63,12 @@
     "lanSyncNow": "Sync Now",
     "lanSyncSuccess": "Synced {{schedules}} schedules and {{holidays}} holidays from the Host.",
     "lanSyncFailed": "Sync failed. Check the Host address and that both PCs are on the same network.",
-    "lanAutoSyncNote": "This PC will also auto-sync from the Host every 5 minutes in the background. Note: sound files themselves aren't transferred - upload the same sound file names on each PC."
+    "lanAutoSyncNote": "This PC will also auto-sync from the Host every 5 minutes in the background. Note: sound files themselves aren't transferred - upload the same sound file names on each PC.",
+    "remoteViewer": "Remote Viewer (Phone/Tablet)",
+    "remoteViewerDesc": "Turn this on to let anyone on the same Wi-Fi/network open a simple read-only page on their phone or tablet browser showing the next bell countdown. No login, no editing - just a live view.",
+    "remoteViewerEnable": "Enable Remote Viewer",
+    "remoteViewerHint": "Open this address in a browser on any phone/tablet connected to the same network:",
+    "remoteViewerNoAuth": "Anyone on this network can view this page (read-only, no password). Don't enable this on a public/shared Wi-Fi network."
   },
   "support": {
     "intro": "Need help with OpenBell? Reach out to the developer directly using the contact details below.",

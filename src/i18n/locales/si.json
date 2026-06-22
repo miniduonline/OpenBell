@@ -63,7 +63,12 @@
     "lanSyncNow": "දැන් Sync කරන්න",
     "lanSyncSuccess": "Host එකෙන් schedules {{schedules}} ක් සහ holidays {{holidays}} ක් sync උනා.",
     "lanSyncFailed": "Sync fail උනා. Host address එක සහ network connection එක check කරන්න.",
-    "lanAutoSyncNote": "මේ පරිගණකය background එකේ Host එකෙන් 5 minutes කට වරක් automatic ව sync වෙයි. Note: sound files transfer වෙන්නේ නැහැ - එකම sound file name එක්ම සියලුම PCs වල upload කරගන්න."
+    "lanAutoSyncNote": "මේ පරිගණකය background එකේ Host එකෙන් 5 minutes කට වරක් automatic ව sync වෙයි. Note: sound files transfer වෙන්නේ නැහැ - එකම sound file name එක්ම සියලුම PCs වල upload කරගන්න.",
+    "remoteViewer": "Remote Viewer (Phone/Tablet)",
+    "remoteViewerDesc": "මේක on කළාම, එකම Wi-Fi/network එකේ ඉන්න ඕනම කෙනෙක්ට phone/tablet browser එකෙන් ඊළඟ bell countdown එක (read-only) බලාගන්න පුළුවන් වෙනවා. Login එකක් නැහැ, edit කරන්න බැහැ - බැලගන්න විතරයි.",
+    "remoteViewerEnable": "Remote Viewer Enable කරන්න",
+    "remoteViewerHint": "මේ network එකටම connect වෙච්ච ඕනම phone/tablet එකක browser එකේ මේ address එක open කරන්න:",
+    "remoteViewerNoAuth": "මේ network එකේ ඉන්න ඕනම කෙනෙක්ට මේ page එක බලාගන්න පුළුවන් (read-only, password නැහැ). Public/shared Wi-Fi එකක මේක enable කරන්න එපා."
   },
   "support": {
     "intro": "OpenBell එක්ක උදව්වක් ඕනේද? පහත සම්බන්ධතා විස්තර භාවිතා කරලා සෘජුවම developer ව සම්බන්ධ කරගන්න.",

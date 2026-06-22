@@ -33,6 +33,10 @@ export interface OpenBellAPI {
   lanSyncNow: (hostIp: string) => Promise<{ schedules: number; holidays: number }>;
   lanStartClientAutoSync: (hostIp: string, intervalMinutes: number) => Promise<void>;
   lanStopClientAutoSync: () => Promise<void>;
+  viewerStart: () => Promise<{ running: boolean; port: number; ip: string | null }>;
+  viewerStop: () => Promise<{ running: boolean }>;
+  viewerGetStatus: () => Promise<{ running: boolean; port: number; ip: string | null }>;
+  copyToClipboard: (text: string) => Promise<void>;
 }
 
 const api: OpenBellAPI = {
@@ -71,6 +75,10 @@ const api: OpenBellAPI = {
   lanStartClientAutoSync: (hostIp, intervalMinutes) =>
     ipcRenderer.invoke('lanSync:startClientAutoSync', hostIp, intervalMinutes),
   lanStopClientAutoSync: () => ipcRenderer.invoke('lanSync:stopClientAutoSync'),
+  viewerStart: () => ipcRenderer.invoke('viewer:start'),
+  viewerStop: () => ipcRenderer.invoke('viewer:stop'),
+  viewerGetStatus: () => ipcRenderer.invoke('viewer:getStatus'),
+  copyToClipboard: (text) => ipcRenderer.invoke('app:copyToClipboard', text),
 };
 
 contextBridge.exposeInMainWorld('openbell', api);

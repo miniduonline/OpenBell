@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, Menu, Tray, nativeImage, shell, session } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, Menu, Tray, nativeImage, shell, session, clipboard } from 'electron';
 import path from 'path';
 import fs from 'fs';
 import { initDatabase, getDb, closeDatabase } from './database/db';
@@ -15,6 +15,7 @@ import {
   startClientAutoSync,
   stopClientAutoSync,
 } from './services/lanSync';
+import { startViewerServer, stopViewerServer, isViewerServerRunning } from './services/remoteViewer';
 import { writeLog } from './services/logger';
 import {
   isPasswordEnabled,
@@ -285,7 +286,29 @@ function registerIpcHandlers(): void {
     stopClientAutoSync();
   });
 
+  // ---- Remote Viewer (read-only phone/tablet web page) ---------------------------
+  const VIEWER_PORT = 47812;
+
+  ipcMain.handle('viewer:start', async () => {
+    await startViewerServer(VIEWER_PORT);
+    return { running: true, port: VIEWER_PORT, ip: getLocalIp() };
+  });
+
+  ipcMain.handle('viewer:stop', () => {
+    stopViewerServer();
+    return { running: false };
+  });
+
+  ipcMain.handle('viewer:getStatus', () => ({
+    running: isViewerServerRunning(),
+    port: VIEWER_PORT,
+    ip: getLocalIp(),
+  }));
+
   // ---- App info -----------------------------------------------------------------
+  ipcMain.handle('app:copyToClipboard', (_e, text: string) => {
+    clipboard.writeText(text);
+  });
   ipcMain.handle('app:getVersion', () => app.getVersion());
 
   // Opens a URL in the user's default system browser. Used by the "Check for
@@ -497,6 +520,21 @@ app.whenReady().then(() => {
     writeLog('error', 'system', `LAN sync startup check failed: ${String(err)}`);
   }
 
+  // Resume the Remote Viewer web page if it was left enabled.
+  try {
+    const db = getDb();
+    const viewerRow = db.prepare(`SELECT value FROM settings WHERE key = 'remote_viewer_enabled'`).get() as
+      | { value?: string }
+      | undefined;
+    if (viewerRow?.value === 'true') {
+      startViewerServer(47812).catch((err) =>
+        writeLog('error', 'system', `Could not start remote viewer: ${String(err)}`)
+      );
+    }
+  } catch (err) {
+    writeLog('error', 'system', `Remote viewer startup check failed: ${String(err)}`);
+  }
+
   app.on('activate', () => {
     showMainWindow();
   });
@@ -524,6 +562,7 @@ app.on('before-quit', () => {
   stopScheduler();
   stopSyncServer();
   stopClientAutoSync();
+  stopViewerServer();
   closeDatabase();
 });
 
