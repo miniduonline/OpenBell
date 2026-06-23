@@ -4,33 +4,13 @@ import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@/store/useStore';
 import { Check, Copy, ShieldCheck, ShieldOff, ExternalLink, Trash2, Network, RefreshCw, Smartphone } from 'lucide-react';
 import type { Language } from '@/types';
+import { TIMEZONES } from '@/utils/timezones';
 
 // Page shown when the user clicks "Check for Updates". OpenBell no longer
 // auto-downloads/auto-installs updates in-app (see v1.9.0 changelog) - the
 // button simply opens the GitHub releases page in the system browser so the
 // user can see what's new and grab the installer manually if they want it.
 const UPDATE_CHECK_URL = 'https://github.com/miniduonline/OpenBell/releases';
-
-const TIMEZONES = [
-  { value: 'Asia/Colombo', label: 'Asia/Colombo — Sri Lanka (default)' },
-  { value: 'Asia/Kolkata', label: 'Asia/Kolkata — India' },
-  { value: 'Asia/Dhaka', label: 'Asia/Dhaka — Bangladesh' },
-  { value: 'Asia/Kathmandu', label: 'Asia/Kathmandu — Nepal' },
-  { value: 'Asia/Karachi', label: 'Asia/Karachi — Pakistan' },
-  { value: 'Asia/Dubai', label: 'Asia/Dubai — UAE' },
-  { value: 'Asia/Singapore', label: 'Asia/Singapore' },
-  { value: 'Asia/Kuala_Lumpur', label: 'Asia/Kuala Lumpur — Malaysia' },
-  { value: 'Asia/Bangkok', label: 'Asia/Bangkok — Thailand' },
-  { value: 'Asia/Tokyo', label: 'Asia/Tokyo — Japan' },
-  { value: 'Asia/Shanghai', label: 'Asia/Shanghai — China' },
-  { value: 'Asia/Hong_Kong', label: 'Asia/Hong Kong' },
-  { value: 'Europe/London', label: 'Europe/London — UK' },
-  { value: 'Europe/Paris', label: 'Europe/Paris' },
-  { value: 'America/New_York', label: 'America/New York — US East' },
-  { value: 'America/Los_Angeles', label: 'America/Los Angeles — US West' },
-  { value: 'Australia/Sydney', label: 'Australia/Sydney' },
-  { value: 'UTC', label: 'UTC' },
-];
 
 interface SettingRow {
   key: string;
@@ -56,6 +36,68 @@ export default function Settings() {
     setStartupEnabled(enabled); // optimistic UI
     const actual = await window.openbell.setLoginItem(enabled);
     setStartupEnabled(actual); // reconcile with what the OS actually accepted
+  };
+
+  // ---- School Information (name + logo) ------------------------------------------
+  const [schoolName, setSchoolName] = useState('');
+  const [schoolLogoUrl, setSchoolLogoUrl] = useState<string | null>(null);
+  const [schoolInfoSaved, setSchoolInfoSaved] = useState(false);
+  const [logoUploading, setLogoUploading] = useState(false);
+
+  const loadSchoolInfo = () => {
+    window.openbell
+      ?.get<SettingRow>('SELECT value FROM settings WHERE key = ?', ['school_name'])
+      .then((row) => setSchoolName(row?.value ?? ''));
+
+    window.openbell
+      ?.get<SettingRow>('SELECT value FROM settings WHERE key = ?', ['school_logo_path'])
+      .then(async (row) => {
+        if (row?.value) {
+          setSchoolLogoUrl(await window.openbell.getLogoDataUrl(row.value));
+        }
+      });
+  };
+
+  useEffect(() => {
+    loadSchoolInfo();
+  }, []);
+
+  const saveSchoolName = async () => {
+    await window.openbell.run(
+      `INSERT INTO settings (key, value, updated_at) VALUES ('school_name', ?, datetime('now'))
+       ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')`,
+      [schoolName.trim() || 'My School']
+    );
+    setSchoolInfoSaved(true);
+    setTimeout(() => setSchoolInfoSaved(false), 2500);
+    // Tell the Header (which doesn't otherwise re-fetch) to pick up the change immediately.
+    window.dispatchEvent(new Event('openbell:school-info-changed'));
+  };
+
+  const uploadLogo = async (file: File) => {
+    setLogoUploading(true);
+    try {
+      const buffer = await file.arrayBuffer();
+      const savedPath = await window.openbell.uploadLogo(buffer, file.name);
+      await window.openbell.run(
+        `INSERT INTO settings (key, value, updated_at) VALUES ('school_logo_path', ?, datetime('now'))
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')`,
+        [savedPath]
+      );
+      setSchoolLogoUrl(await window.openbell.getLogoDataUrl(savedPath));
+      window.dispatchEvent(new Event('openbell:school-info-changed'));
+    } finally {
+      setLogoUploading(false);
+    }
+  };
+
+  const removeLogo = async () => {
+    await window.openbell.run(
+      `INSERT INTO settings (key, value, updated_at) VALUES ('school_logo_path', '', datetime('now'))
+       ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')`
+    );
+    setSchoolLogoUrl(null);
+    window.dispatchEvent(new Event('openbell:school-info-changed'));
   };
 
   // ---- Timezone -----------------------------------------------------------------
@@ -304,7 +346,7 @@ export default function Settings() {
 
   const copyRecoveryCode = () => {
     if (!recoveryCode) return;
-    navigator.clipboard?.writeText(recoveryCode);
+    window.openbell.copyToClipboard(recoveryCode);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -383,6 +425,58 @@ export default function Settings() {
       <h1 className="text-2xl font-bold">{t('nav.settings')}</h1>
 
       <div className="card space-y-4">
+        <h2 className="font-semibold">{t('settings.schoolInfo')}</h2>
+        <p className="text-xs text-slate-400">{t('settings.schoolInfoDesc')}</p>
+
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center overflow-hidden bg-white">
+            {schoolLogoUrl ? (
+              <img src={schoolLogoUrl} alt="School logo" className="w-full h-full object-contain" />
+            ) : (
+              <span className="text-xs text-slate-400 text-center px-1">{t('settings.noLogo')}</span>
+            )}
+          </div>
+          <div className="flex flex-col gap-2">
+            <label className="btn-secondary cursor-pointer text-center text-sm">
+              {logoUploading ? t('settings.uploading') : t('settings.uploadLogo')}
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/svg+xml"
+                className="hidden"
+                onChange={(e) => e.target.files?.[0] && uploadLogo(e.target.files[0])}
+              />
+            </label>
+            {schoolLogoUrl && (
+              <button onClick={removeLogo} className="text-xs text-rose-500 hover:underline">
+                {t('settings.removeLogo')}
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-xs text-slate-400">{t('settings.schoolNameLabel')}</label>
+          <input
+            type="text"
+            className="input-field"
+            value={schoolName}
+            onChange={(e) => setSchoolName(e.target.value)}
+            placeholder={t('settings.schoolNamePlaceholder')}
+          />
+        </div>
+        <div className="flex items-center gap-3">
+          <button className="btn-primary" onClick={saveSchoolName}>
+            {t('common.save')}
+          </button>
+          {schoolInfoSaved && (
+            <span className="text-sm text-emerald-600 flex items-center gap-1">
+              <Check size={14} /> {t('common.saved')}
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="card space-y-4">
         <h2 className="font-semibold">{t('settings.theme')}</h2>
         <div className="flex gap-2">
           <button
@@ -428,7 +522,7 @@ export default function Settings() {
       </div>
 
       <div className="card space-y-4">
-        <h2 className="font-semibold">Timezone</h2>
+        <h2 className="font-semibold">{t('settings.timezone')}</h2>
         <p className="text-xs text-slate-400">
           Bells ring according to this timezone, regardless of what timezone the PC's clock is set to. Defaults to
           Sri Lanka time (Asia/Colombo).
@@ -638,7 +732,7 @@ export default function Settings() {
             {(pwMode === 'enable' || pwMode === 'change') && (
               <div className="space-y-3">
                 <div>
-                  <label className="text-xs text-slate-400">New password</label>
+                  <label className="text-xs text-slate-400">{t('settings.newPassword')}</label>
                   <input
                     type="password"
                     className="input-field"
@@ -647,7 +741,7 @@ export default function Settings() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-slate-400">Confirm new password</label>
+                  <label className="text-xs text-slate-400">{t('settings.confirmNewPassword')}</label>
                   <input
                     type="password"
                     className="input-field"
@@ -670,7 +764,7 @@ export default function Settings() {
             {pwMode === 'disable' && (
               <div className="space-y-3">
                 <div>
-                  <label className="text-xs text-slate-400">Current password</label>
+                  <label className="text-xs text-slate-400">{t('settings.currentPassword')}</label>
                   <input
                     type="password"
                     className="input-field"
@@ -681,7 +775,7 @@ export default function Settings() {
                 {pwError && <p className="text-sm text-rose-600">{pwError}</p>}
                 <div className="flex gap-2">
                   <button className="btn-primary" onClick={submitDisablePassword}>
-                    Confirm Disable
+                    {t('settings.confirmDisable')}
                   </button>
                   <button className="btn-secondary" onClick={resetPwForm}>
                     {t('common.cancel')}
@@ -691,8 +785,7 @@ export default function Settings() {
             )}
 
             <p className="text-xs text-slate-400">
-              Forgot the password later? On the lock screen, tap "Forgot password?" and enter the recovery code
-              shown above to set a new one.
+              {t('settings.forgotPasswordHint')}
             </p>
           </>
         )}
@@ -700,8 +793,8 @@ export default function Settings() {
 
       {/* New v1.2.0 Features */}
       <div className="card space-y-4">
-        <h2 className="font-semibold flex items-center gap-2">System Maintenance</h2>
-        <p className="text-xs text-slate-400">Updates and full data reset</p>
+        <h2 className="font-semibold flex items-center gap-2">{t('settings.systemMaintenance')}</h2>
+        <p className="text-xs text-slate-400">{t('settings.systemMaintenanceDesc')}</p>
 
         <div className="flex flex-wrap gap-3">
           <button className="btn-secondary flex items-center gap-2" onClick={handleCheckForUpdates}>
@@ -742,7 +835,7 @@ export default function Settings() {
               password to continue.
             </p>
             <div>
-              <label className="text-xs text-slate-400">Current password</label>
+              <label className="text-xs text-slate-400">{t('settings.currentPassword')}</label>
               <input
                 type="password"
                 autoFocus

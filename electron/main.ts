@@ -206,6 +206,35 @@ function registerIpcHandlers(): void {
     return db.prepare(sql).get(...params);
   });
 
+  // ---- School Logo (shown in Header, set via Settings) ------------------------
+  ipcMain.handle('logo:upload', async (_e, fileBuffer: ArrayBuffer, fileName: string) => {
+    const logoDir = path.join(app.getPath('userData'), 'logo');
+    if (!fs.existsSync(logoDir)) fs.mkdirSync(logoDir, { recursive: true });
+    // Always overwrite as a single fixed filename (keeping the original
+    // extension) so old logos don't pile up on disk every time someone
+    // changes it.
+    const ext = path.extname(fileName) || '.png';
+    const destPath = path.join(logoDir, `school-logo${ext}`);
+    // Clean up any previously-saved logo with a different extension first.
+    for (const f of fs.existsSync(logoDir) ? fs.readdirSync(logoDir) : []) {
+      if (f.startsWith('school-logo')) fs.unlinkSync(path.join(logoDir, f));
+    }
+    fs.writeFileSync(destPath, Buffer.from(fileBuffer));
+    return destPath;
+  });
+
+  ipcMain.handle('logo:getDataUrl', (_e, filePath: string) => {
+    try {
+      if (!filePath || !fs.existsSync(filePath)) return null;
+      const ext = path.extname(filePath).toLowerCase();
+      const mime = ext === '.svg' ? 'image/svg+xml' : ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' : 'image/png';
+      const base64 = fs.readFileSync(filePath).toString('base64');
+      return `data:${mime};base64,${base64}`;
+    } catch {
+      return null;
+    }
+  });
+
   // ---- Sounds -----------------------------------------------------------------
   ipcMain.handle('sounds:upload', async (_e, fileBuffer: ArrayBuffer, fileName: string) => {
     const soundsDir = path.join(app.getPath('userData'), 'sounds');

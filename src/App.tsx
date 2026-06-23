@@ -3,6 +3,7 @@ import { HashRouter, Routes, Route } from 'react-router-dom';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import LockScreen from '@/components/LockScreen';
+import SetupWizard from '@/components/SetupWizard';
 import Dashboard from '@/pages/Dashboard';
 import Schedules from '@/pages/Schedules';
 import Sounds from '@/pages/Sounds';
@@ -18,6 +19,96 @@ export default function App() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [locked, setLocked] = useState(false);
+  const [setupChecked, setSetupChecked] = useState(false);
+  const [setupCompleted, setSetupCompleted] = useState(true);
+  const [updateAvailable, setUpdateAvailable] = useState<{ version: string; url: string } | null>(null);
+
+  // Once a day, check GitHub Releases for a newer version than what's
+  // currently installed. This is a plain read-only GET request to a
+  // public API endpoint - no telemetry, no accounts, nothing is sent
+  // about this PC or school. If there's no internet, this just silently
+  // does nothing (fails quietly, never blocks the app from working).
+  useEffect(() => {
+    if (!window.openbell) return;
+
+    const dismissedVersion = localStorage.getItem('openbell-update-dismissed');
+    const lastCheck = Number(localStorage.getItem('openbell-update-lastcheck') ?? '0');
+    const oneDayMs = 24 * 60 * 60 * 1000;
+    if (Date.now() - lastCheck < oneDayMs) return;
+
+    (async () => {
+      try {
+        const currentVersion = await window.openbell.getVersion();
+        const res = await fetch('https://api.github.com/repos/miniduonline/OpenBell/releases/latest');
+        if (!res.ok) return;
+        const data = await res.json();
+        const latestVersion = String(data.tag_name ?? '').replace(/^v/, '');
+        if (!latestVersion) return;
+
+        localStorage.setItem('openbell-update-lastcheck', String(Date.now()));
+
+        const isNewer = (a: string, b: string) => {
+          const pa = a.split('.').map(Number);
+          const pb = b.split('.').map(Number);
+          for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+            if ((pa[i] ?? 0) > (pb[i] ?? 0)) return true;
+            if ((pa[i] ?? 0) < (pb[i] ?? 0)) return false;
+          }
+          return false;
+        };
+
+        if (isNewer(latestVersion, currentVersion) && latestVersion !== dismissedVersion) {
+          setUpdateAvailable({ version: latestVersion, url: data.html_url ?? '' });
+        }
+      } catch {
+        // No internet, or GitHub unreachable - just stay quiet.
+      }
+    })();
+  }, []);
+
+  const dismissUpdate = () => {
+    if (updateAvailable) {
+      localStorage.setItem('openbell-update-dismissed', updateAvailable.version);
+    }
+    setUpdateAvailable(null);
+  };
+
+  // First-run check: has this PC's OpenBell ever finished the setup
+  // wizard? If not, we show it before anything else (including the lock
+  // screen) so a brand new install doesn't drop someone into a blank
+  // Dashboard with nothing configured.
+  useEffect(() => {
+    if (!window.openbell) {
+      setSetupChecked(true);
+      return;
+    }
+    (async () => {
+      const row = await window.openbell.get<{ value: string }>(
+        'SELECT value FROM settings WHERE key = ?',
+        ['setup_completed']
+      );
+      if (row?.value === 'true') {
+        setSetupCompleted(true);
+      } else {
+        // Existing installs upgrading from a version before this wizard
+        // existed will have schedules already configured - don't show
+        // the wizard to them, just silently mark setup as done.
+        const existing = await window.openbell.get<{ count: number }>(
+          'SELECT COUNT(*) as count FROM schedules'
+        );
+        if ((existing?.count ?? 0) > 0) {
+          await window.openbell.run(
+            `INSERT INTO settings (key, value, updated_at) VALUES ('setup_completed', 'true', datetime('now'))
+             ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')`
+          );
+          setSetupCompleted(true);
+        } else {
+          setSetupCompleted(false);
+        }
+      }
+      setSetupChecked(true);
+    })();
+  }, []);
   const [healthAlert, setHealthAlert] = useState<{ title: string; ringTime: string; reason: string } | null>(
     null
   );
@@ -148,8 +239,12 @@ const blob = new Blob([new Uint8Array(buffer)], { type: mime });
     });
   }, []);
 
-  if (!authReady) {
+  if (!authReady || !setupChecked) {
     return <div className="min-h-screen bg-slate-50 dark:bg-slate-900" />;
+  }
+
+  if (!setupCompleted) {
+    return <SetupWizard onComplete={() => setSetupCompleted(true)} />;
   }
 
   if (locked) {
@@ -161,6 +256,22 @@ const blob = new Blob([new Uint8Array(buffer)], { type: mime });
       <div className="flex min-h-screen">
         <Sidebar />
         <div className="flex-1 flex flex-col">
+          {updateAvailable && (
+            <div className="bg-primary-600 text-white text-sm px-4 py-2 flex items-center justify-between gap-3">
+              <span>
+                🎉 OpenBell v{updateAvailable.version} is available.{' '}
+                <button
+                  className="underline font-medium"
+                  onClick={() => window.openbell.openExternal(updateAvailable.url)}
+                >
+                  View release
+                </button>
+              </span>
+              <button onClick={dismissUpdate} className="opacity-80 hover:opacity-100 px-2">
+                ✕
+              </button>
+            </div>
+          )}
           {healthAlert && (
             <div className="bg-rose-600 text-white text-sm px-4 py-2 flex items-center justify-between gap-3">
               <span>

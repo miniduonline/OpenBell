@@ -5,6 +5,8 @@ export interface OpenBellAPI {
   get: <T = unknown>(sql: string, params?: unknown[]) => Promise<T | undefined>;
   run: (sql: string, params?: unknown[]) => Promise<{ lastInsertRowid: number; changes: number }>;
   uploadSound: (fileBuffer: ArrayBuffer, fileName: string) => Promise<string>;
+  uploadLogo: (fileBuffer: ArrayBuffer, fileName: string) => Promise<string>;
+  getLogoDataUrl: (filePath: string) => Promise<string | null>;
   previewSound: (filePath: string, volume: number) => Promise<void>;
   getAudioBuffer: (filePath: string) => Promise<Buffer | null>;
   createBackup: () => Promise<string>;
@@ -52,6 +54,8 @@ const api: OpenBellAPI = {
   get: (sql, params = []) => ipcRenderer.invoke('db:get', sql, params),
   run: (sql, params = []) => ipcRenderer.invoke('db:run', sql, params),
   uploadSound: (fileBuffer, fileName) => ipcRenderer.invoke('sounds:upload', fileBuffer, fileName),
+  uploadLogo: (fileBuffer, fileName) => ipcRenderer.invoke('logo:upload', fileBuffer, fileName),
+  getLogoDataUrl: (filePath) => ipcRenderer.invoke('logo:getDataUrl', filePath),
   previewSound: (filePath, volume) => ipcRenderer.invoke('sounds:preview', filePath, volume),
   getAudioBuffer: (filePath) => ipcRenderer.invoke('sounds:getBuffer', filePath),
   createBackup: () => ipcRenderer.invoke('backup:create'),

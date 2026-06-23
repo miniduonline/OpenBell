@@ -11,12 +11,41 @@ interface HeaderProps {
 
 export default function Header({ onLock }: HeaderProps) {
   const { theme, toggleTheme, toggleSidebar, language, setLanguage } = useAppStore();
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation();
   const [passwordEnabled, setPasswordEnabled] = useState(false);
+  const [schoolName, setSchoolName] = useState('');
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
   useEffect(() => {
     window.openbell?.authIsEnabled().then(setPasswordEnabled);
   }, []);
+
+  const loadSchoolInfo = () => {
+    window.openbell
+      ?.get<{ value: string }>('SELECT value FROM settings WHERE key = ?', ['school_name'])
+      .then((row) => setSchoolName(row?.value ?? ''));
+
+    window.openbell
+      ?.get<{ value: string }>('SELECT value FROM settings WHERE key = ?', ['school_logo_path'])
+      .then(async (row) => {
+        if (row?.value) {
+          const dataUrl = await window.openbell.getLogoDataUrl(row.value);
+          setLogoUrl(dataUrl);
+        } else {
+          setLogoUrl(null);
+        }
+      });
+  };
+
+  useEffect(() => {
+    loadSchoolInfo();
+    // The Settings page broadcasts this event after the school
+    // name/logo is changed, so the Header updates immediately without
+    // needing a full app reload.
+    window.addEventListener('openbell:school-info-changed', loadSchoolInfo);
+    return () => window.removeEventListener('openbell:school-info-changed', loadSchoolInfo);
+  }, []);
+
 
   const changeLanguage = (lng: Language) => {
     setLanguage(lng);
@@ -32,6 +61,15 @@ export default function Header({ onLock }: HeaderProps) {
       >
         <Menu size={18} />
       </button>
+
+      {schoolName && (
+        <div className="flex items-center gap-2 min-w-0">
+          {logoUrl && (
+            <img src={logoUrl} alt={schoolName} className="w-8 h-8 rounded-lg object-contain bg-white" />
+          )}
+          <span className="font-semibold text-sm truncate max-w-[200px]">{schoolName}</span>
+        </div>
+      )}
 
       <Clock />
 

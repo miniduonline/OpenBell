@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Lock, KeyRound, AlertCircle } from 'lucide-react';
 
 interface LockScreenProps {
@@ -12,6 +13,7 @@ interface LockScreenProps {
  * which matters since the bell PC is typically offline.
  */
 export default function LockScreen({ onUnlock }: LockScreenProps) {
+  const { t } = useTranslation();
   const [mode, setMode] = useState<'login' | 'recover'>('login');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -32,7 +34,7 @@ export default function LockScreen({ onUnlock }: LockScreenProps) {
       if (ok) {
         onUnlock();
       } else {
-        setError('Incorrect password. Please try again.');
+        setError(t('lock.incorrectPassword'));
         setPassword('');
       }
     } finally {
@@ -44,11 +46,11 @@ export default function LockScreen({ onUnlock }: LockScreenProps) {
     e.preventDefault();
     setError('');
     if (newPassword.length < 4) {
-      setError('New password must be at least 4 characters.');
+      setError(t('lock.passwordTooShort'));
       return;
     }
     if (newPassword !== confirmPassword) {
-      setError('Passwords do not match.');
+      setError(t('lock.passwordMismatch'));
       return;
     }
     setBusy(true);
@@ -57,7 +59,7 @@ export default function LockScreen({ onUnlock }: LockScreenProps) {
       if (result.success) {
         setNewRecoveryCode(result.recoveryCode);
       } else {
-        setError('Invalid recovery code. Check the code and try again.');
+        setError(t('lock.invalidRecoveryCode'));
       }
     } finally {
       setBusy(false);
@@ -71,13 +73,13 @@ export default function LockScreen({ onUnlock }: LockScreenProps) {
           <div className="w-12 h-12 rounded-full bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center text-primary-600">
             <Lock size={22} />
           </div>
-          <h1 className="text-lg font-bold">OpenBell is locked</h1>
+          <h1 className="text-lg font-bold">{t('lock.title')}</h1>
           <p className="text-sm text-slate-500">
             {mode === 'login'
-              ? 'Enter the password to continue.'
+              ? t('lock.enterPasswordPrompt')
               : newRecoveryCode
-                ? 'Password reset successfully.'
-                : 'Enter your recovery code to set a new password.'}
+                ? t('lock.resetSuccess')
+                : t('lock.enterRecoveryPrompt')}
           </p>
         </div>
 
@@ -94,12 +96,12 @@ export default function LockScreen({ onUnlock }: LockScreenProps) {
               type="password"
               autoFocus
               className="input-field"
-              placeholder="Password"
+              placeholder={t('lock.passwordPlaceholder')}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
             <button type="submit" disabled={busy || !password} className="btn-primary w-full">
-              {busy ? 'Checking…' : 'Unlock'}
+              {busy ? t('lock.checking') : t('lock.unlock')}
             </button>
             <button
               type="button"
@@ -109,7 +111,7 @@ export default function LockScreen({ onUnlock }: LockScreenProps) {
               }}
               className="w-full text-xs text-slate-400 hover:text-primary-600 flex items-center justify-center gap-1"
             >
-              <KeyRound size={12} /> Forgot password?
+              <KeyRound size={12} /> {t('lock.forgotPassword')}
             </button>
           </form>
         )}
@@ -117,7 +119,7 @@ export default function LockScreen({ onUnlock }: LockScreenProps) {
         {mode === 'recover' && !newRecoveryCode && (
           <form onSubmit={submitRecovery} className="space-y-3">
             <div>
-              <label className="text-xs text-slate-400">Recovery code</label>
+              <label className="text-xs text-slate-400">{t('lock.recoveryCode')}</label>
               <input
                 type="text"
                 autoFocus
@@ -128,7 +130,7 @@ export default function LockScreen({ onUnlock }: LockScreenProps) {
               />
             </div>
             <div>
-              <label className="text-xs text-slate-400">New password</label>
+              <label className="text-xs text-slate-400">{t('lock.newPassword')}</label>
               <input
                 type="password"
                 className="input-field"
@@ -137,7 +139,7 @@ export default function LockScreen({ onUnlock }: LockScreenProps) {
               />
             </div>
             <div>
-              <label className="text-xs text-slate-400">Confirm new password</label>
+              <label className="text-xs text-slate-400">{t('lock.confirmNewPassword')}</label>
               <input
                 type="password"
                 className="input-field"
@@ -146,7 +148,7 @@ export default function LockScreen({ onUnlock }: LockScreenProps) {
               />
             </div>
             <button type="submit" disabled={busy || !recoveryCode || !newPassword} className="btn-primary w-full">
-              {busy ? 'Resetting…' : 'Reset password'}
+              {busy ? t('lock.resetting') : t('lock.resetPassword')}
             </button>
             <button
               type="button"
@@ -156,7 +158,7 @@ export default function LockScreen({ onUnlock }: LockScreenProps) {
               }}
               className="w-full text-xs text-slate-400 hover:text-primary-600"
             >
-              Back to login
+              {t('lock.backToLogin')}
             </button>
           </form>
         )}
@@ -164,14 +166,13 @@ export default function LockScreen({ onUnlock }: LockScreenProps) {
         {mode === 'recover' && newRecoveryCode && (
           <div className="space-y-3">
             <p className="text-sm">
-              Your password was reset. Here is your <strong>new</strong> recovery code — save it somewhere safe.
-              The old code no longer works, and this one will not be shown again.
+              {t('lock.recoveryCodeNoticePart1')} <strong>{t('lock.recoveryCodeNoticeNew')}</strong> {t('lock.recoveryCodeNoticePart2')}
             </p>
             <div className="bg-slate-100 dark:bg-slate-700 rounded-lg p-3 text-center font-mono text-base tracking-wider select-all">
               {newRecoveryCode}
             </div>
             <button type="button" onClick={onUnlock} className="btn-primary w-full">
-              Continue to OpenBell
+              {t('lock.continueToApp')}
             </button>
           </div>
         )}

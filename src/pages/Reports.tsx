@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, Fragment } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Download, ChevronDown, ChevronRight, ShieldCheck, ShieldAlert, BellRing } from 'lucide-react';
 import type { LogEntry } from '@/types';
 import { toCSV } from '@/utils/format';
@@ -44,6 +45,7 @@ function parseMeta(meta?: string | null): Record<string, unknown> {
 }
 
 export default function Reports() {
+  const { t } = useTranslation();
   const today = todaySLT();
   const sevenDaysAgo = daysAgoSLT(7);
 
@@ -134,15 +136,15 @@ export default function Reports() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-2xl font-bold">Reports & Activity Log</h1>
+        <h1 className="text-2xl font-bold">{t('reports.pageTitle')}</h1>
         <button className="btn-secondary flex items-center gap-2" onClick={exportCSV}>
-          <Download size={16} /> Export CSV
+          <Download size={16} /> {t('reports.exportCsv')}
         </button>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="card">
-          <p className="text-xs text-slate-400">Bell Reliability</p>
+          <p className="text-xs text-slate-400">{t('reports.bellReliability')}</p>
           <p
             className={`text-2xl font-bold ${
               bellStats.reliability === 100 ? 'text-emerald-600' : bellStats.reliability >= 90 ? 'text-amber-600' : 'text-rose-600'
@@ -152,19 +154,19 @@ export default function Reports() {
           </p>
         </div>
         <div className="card">
-          <p className="text-xs text-slate-400">Bells Rung OK</p>
+          <p className="text-xs text-slate-400">{t('reports.bellsRungOk')}</p>
           <p className="text-2xl font-bold flex items-center gap-1.5 text-emerald-600">
             <ShieldCheck size={18} /> {bellStats.successCount}
           </p>
         </div>
         <div className="card">
-          <p className="text-xs text-slate-400">Bells Failed</p>
+          <p className="text-xs text-slate-400">{t('reports.bellsFailed')}</p>
           <p className="text-2xl font-bold flex items-center gap-1.5 text-rose-600">
             <ShieldAlert size={18} /> {bellStats.failedCount}
           </p>
         </div>
         <div className="card">
-          <p className="text-xs text-slate-400">Avg. Response Time</p>
+          <p className="text-xs text-slate-400">{t('reports.avgResponseTime')}</p>
           <p className="text-2xl font-bold flex items-center gap-1.5">
             <BellRing size={18} className="text-slate-400" />
             {bellStats.avgLatency !== null ? `${bellStats.avgLatency}ms` : '—'}
@@ -174,7 +176,7 @@ export default function Reports() {
 
       <div className="card flex flex-wrap gap-3 items-end">
         <div className="flex flex-col gap-1">
-          <label className="text-xs text-slate-400">From date (Sri Lanka time)</label>
+          <label className="text-xs text-slate-400">{t('reports.fromDate')}</label>
           <input
             type="date"
             className="input-field"
@@ -184,7 +186,7 @@ export default function Reports() {
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs text-slate-400">To date (Sri Lanka time)</label>
+          <label className="text-xs text-slate-400">{t('reports.toDate')}</label>
           <input
             type="date"
             className="input-field"
@@ -195,44 +197,44 @@ export default function Reports() {
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs text-slate-400">Category</label>
+          <label className="text-xs text-slate-400">{t('reports.category')}</label>
           <select
             className="input-field"
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
           >
-            <option value="all">All categories</option>
-            <option value="bell">Bell</option>
-            <option value="schedule">Schedule</option>
-            <option value="system">System</option>
-            <option value="backup">Backup</option>
-            <option value="auth">Auth</option>
+            <option value="all">{t('reports.allCategories')}</option>
+            <option value="bell">{t('reports.catBell')}</option>
+            <option value="schedule">{t('reports.catSchedule')}</option>
+            <option value="system">{t('reports.catSystem')}</option>
+            <option value="backup">{t('reports.catBackup')}</option>
+            <option value="auth">{t('reports.catAuth')}</option>
           </select>
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs text-slate-400">Outcome</label>
+          <label className="text-xs text-slate-400">{t('reports.outcome')}</label>
           <select
             className="input-field"
             value={outcomeFilter}
             onChange={(e) => setOutcomeFilter(e.target.value as 'all' | 'success' | 'failed')}
           >
-            <option value="all">All</option>
-            <option value="success">Success only</option>
-            <option value="failed">Failed only</option>
+            <option value="all">{t('reports.outcomeAll')}</option>
+            <option value="success">{t('reports.outcomeSuccessOnly')}</option>
+            <option value="failed">{t('reports.outcomeFailedOnly')}</option>
           </select>
         </div>
         <div className="flex flex-col gap-1 flex-1 min-w-[160px]">
-          <label className="text-xs text-slate-400">Search</label>
+          <label className="text-xs text-slate-400">{t('reports.search')}</label>
           <input
             type="text"
             className="input-field"
-            placeholder="Search message or details..."
+            placeholder={t('reports.searchPlaceholder')}
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
           />
         </div>
         <button className="btn-primary" onClick={applyFilter}>
-          Apply
+          {t('reports.apply')}
         </button>
         <button
           className="btn-secondary"
@@ -245,10 +247,10 @@ export default function Reports() {
             load(sevenDaysAgo, today);
           }}
         >
-          Reset
+          {t('reports.reset')}
         </button>
         <p className="text-xs text-slate-400 self-center ml-auto">
-          All times shown in Sri Lanka time (Asia/Colombo)
+          {t('reports.timezoneNote')}
         </p>
       </div>
 
@@ -257,10 +259,10 @@ export default function Reports() {
           <thead>
             <tr className="text-left text-slate-400 border-b border-slate-100 dark:border-slate-700">
               <th className="py-2 pr-2 w-6"></th>
-              <th className="py-2 pr-4">Time (SLT)</th>
-              <th className="pr-4">Level</th>
-              <th className="pr-4">Category</th>
-              <th>Message</th>
+              <th className="py-2 pr-4">{t('reports.colTime')}</th>
+              <th className="pr-4">{t('reports.colLevel')}</th>
+              <th className="pr-4">{t('reports.colCategory')}</th>
+              <th>{t('reports.colMessage')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
@@ -307,7 +309,7 @@ export default function Reports() {
             {filteredLogs.length === 0 && (
               <tr>
                 <td colSpan={5} className="py-8 text-center text-slate-400">
-                  No log entries found for the selected filters.
+                  {t('reports.noEntries')}
                 </td>
               </tr>
             )}
@@ -315,7 +317,7 @@ export default function Reports() {
         </table>
         {filteredLogs.length > 0 && (
           <p className="text-xs text-slate-400 mt-3 text-right">
-            Showing {filteredLogs.length} {filteredLogs.length === 1000 ? '(max 1000)' : ''} entries
+            {t('reports.showingEntries', { count: filteredLogs.length })} {filteredLogs.length === 1000 ? t('reports.maxEntriesNote') : ''}
           </p>
         )}
       </div>

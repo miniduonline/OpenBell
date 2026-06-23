@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { CalendarClock, Volume2, ShieldCheck, DatabaseBackup, Bell, ShieldAlert } from 'lucide-react';
 import StatCard from '@/components/Card';
 import type { Schedule } from '@/types';
-import { formatTime, dayName } from '@/utils/format';
+import { formatTime } from '@/utils/format';
 
 // Given a schedule's day_of_week (0=Sun..6=Sat) and "HH:MM" ring_time,
 // returns the next real Date/time this bell will ring (today if it
@@ -129,7 +129,7 @@ export default function Dashboard() {
           <div className="flex-1">
             <p className="text-sm text-slate-500 dark:text-slate-400">
               {t('dashboard.nextBell')} · {upcoming.schedule.title}
-              {!isToday && <> · {dayName(upcoming.at.getDay())}</>}
+              {!isToday && <> · {t(`common.days.${upcoming.at.getDay()}`)}</>}
             </p>
             <p className="text-3xl font-bold font-mono tabular-nums">
               {formatCountdown(upcoming.at.getTime() - now.getTime())}
@@ -150,10 +150,10 @@ export default function Dashboard() {
 
       <div className="card">
         <h2 className="font-semibold mb-4">
-          {t('dashboard.upcomingBells')} — {dayName(new Date().getDay())}
+          {t('dashboard.upcomingBells')} — {t(`common.days.${new Date().getDay()}`)}
         </h2>
         {schedules.length === 0 ? (
-          <p className="text-sm text-slate-400">No bells scheduled for today.</p>
+          <p className="text-sm text-slate-400">{t('dashboard.noBellsToday')}</p>
         ) : (
           <ul className="divide-y divide-slate-100 dark:divide-slate-700">
             {schedules.map((s) => (

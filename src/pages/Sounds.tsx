@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Play, Upload, Trash2 } from 'lucide-react';
 import type { Sound } from '@/types';
 
 export default function Sounds() {
+  const { t } = useTranslation();
   const [sounds, setSounds] = useState<Sound[]>([]);
   const [previewingId, setPreviewingId] = useState<number | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -34,7 +36,7 @@ export default function Sounds() {
   };
 
   const remove = async (id: number) => {
-    if (!confirm('Delete this sound? Any schedules using it will lose their sound assignment.')) return;
+    if (!confirm(t('sounds.confirmDelete'))) return;
     await window.openbell.run('DELETE FROM sounds WHERE id = ?', [id]);
     load();
   };
@@ -48,16 +50,16 @@ export default function Sounds() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Bell Sounds</h1>
+        <h1 className="text-2xl font-bold">{t('nav.sounds')}</h1>
         <button className="btn-primary flex items-center gap-2" onClick={() => fileInput.current?.click()}>
-          <Upload size={16} /> Upload Sound
+          <Upload size={16} /> {t('sounds.uploadSound')}
         </button>
         <input ref={fileInput} type="file" accept=".mp3,.wav,.ogg" className="hidden" onChange={handleUpload} />
       </div>
 
       {sounds.length === 0 && (
         <div className="card text-sm text-slate-500 text-center py-10">
-          No sounds uploaded yet. Click <strong>Upload Sound</strong> to add an MP3 or WAV file.
+          {t('sounds.emptyStatePart1')} <strong>{t('sounds.uploadSound')}</strong> {t('sounds.emptyStatePart2')}
         </div>
       )}
 
@@ -74,20 +76,20 @@ export default function Sounds() {
                       ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/40 animate-pulse'
                       : 'hover:bg-slate-100 dark:hover:bg-slate-700 text-primary-600'
                   }`}
-                  title="Preview sound"
+                  title={t('sounds.previewSound')}
                 >
                   <Play size={14} />
                 </button>
                 <button
                   onClick={() => remove(s.id)}
                   className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-rose-500"
-                  title="Delete sound"
+                  title={t('sounds.deleteSound')}
                 >
                   <Trash2 size={14} />
                 </button>
               </div>
             </div>
-            <label className="text-xs text-slate-400">Volume: {s.volume}%</label>
+            <label className="text-xs text-slate-400">{t('sounds.volume')}: {s.volume}%</label>
             <input
               type="range"
               min={0}

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, Pencil, ToggleLeft, ToggleRight, Copy } from 'lucide-react';
 import type { Schedule, Sound } from '@/types';
 import { DAY_NAMES, formatTime } from '@/utils/format';
@@ -17,6 +18,7 @@ const emptyForm: Partial<Schedule> = {
 const WEEKDAYS = [1, 2, 3, 4, 5];
 
 export default function Schedules() {
+  const { t } = useTranslation();
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [sounds, setSounds] = useState<Sound[]>([]);
   const [form, setForm] = useState<Partial<Schedule>>(emptyForm);
@@ -51,6 +53,47 @@ export default function Schedules() {
     load();
     loadSounds();
   }, []);
+
+  // ---- Keyboard shortcuts for faster data entry ----------------------------------
+  // Ctrl/Cmd+N: open the "new schedule" form. Ctrl/Cmd+S: save the form
+  // that's currently open (instead of triggering the browser's save-page
+  // dialog). Esc: close whichever dialog/panel is open. These only act
+  // when this page is mounted/visible, which matches where a user would
+  // expect "new schedule"/"save" to apply.
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const ctrlOrCmd = e.ctrlKey || e.metaKey;
+
+      if (ctrlOrCmd && e.key.toLowerCase() === 'n') {
+        e.preventDefault();
+        if (!showForm) {
+          setForm(emptyForm);
+          setEditingId(null);
+          setShowForm(true);
+        }
+        return;
+      }
+
+      if (ctrlOrCmd && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        if (showForm) {
+          save();
+        }
+        return;
+      }
+
+      if (e.key === 'Escape') {
+        if (showForm) {
+          setShowForm(false);
+        } else if (showCopyPanel) {
+          setShowCopyPanel(false);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [showForm, showCopyPanel, form, editingId]);
 
   const save = async () => {
     if (!form.title || !form.ring_time) return;
@@ -103,7 +146,7 @@ export default function Schedules() {
 
   const copyDayToOtherDays = async () => {
     if (copyTargetDays.length === 0) {
-      setCopyResult('Pick at least one day to copy to.');
+      setCopyResult(t('schedules.pickAtLeastOneDay'));
       return;
     }
 
@@ -116,7 +159,7 @@ export default function Schedules() {
       );
 
       if (sourceSchedules.length === 0) {
-        setCopyResult(`No bells are set for ${DAY_NAMES[copySourceDay]} yet — nothing to copy.`);
+        setCopyResult(t('schedules.noBellsSetForDay', { day: t(`common.days.${copySourceDay}`) }));
         setCopying(false);
         return;
       }
@@ -151,15 +194,16 @@ export default function Schedules() {
         }
       }
 
-      const dayWord = copyTargetDays.length === 1 ? 'day' : 'days';
-      const bellWord = copiedCount === 1 ? 'bell' : 'bells';
       setCopyResult(
-        `✅ Copied ${copiedCount} ${bellWord} from ${DAY_NAMES[copySourceDay]} to ${copyTargetDays.length} ${dayWord}.` +
-          (skippedCount > 0 ? ` (${skippedCount} already existed and were skipped.)` : '')
+        t('schedules.copiedSummary', {
+          count: copiedCount,
+          from: t(`common.days.${copySourceDay}`),
+          days: copyTargetDays.length,
+        }) + (skippedCount > 0 ? ' ' + t('schedules.copySkippedSuffix', { skipped: skippedCount }) : '')
       );
       load();
     } catch (e) {
-      setCopyResult('❌ Copy failed. Please try again.');
+      setCopyResult(t('schedules.copyFailed'));
     } finally {
       setCopying(false);
     }
@@ -168,7 +212,7 @@ export default function Schedules() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-2xl font-bold">Bell Schedules</h1>
+        <h1 className="text-2xl font-bold">{t('schedules.pageTitle')}</h1>
         <div className="flex gap-2">
           <button
             className="btn-secondary flex items-center gap-2"
@@ -178,7 +222,7 @@ export default function Schedules() {
               setShowCopyPanel((v) => !v);
             }}
           >
-            <Copy size={16} /> Copy Day to Other Days
+            <Copy size={16} /> {t('schedules.copyDayButton')}
           </button>
           <button
             className="btn-primary flex items-center gap-2"
@@ -189,7 +233,7 @@ export default function Schedules() {
               setShowForm(true);
             }}
           >
-            <Plus size={16} /> Add Schedule
+            <Plus size={16} /> {t('schedules.addSchedule')}
           </button>
         </div>
       </div>
@@ -197,16 +241,15 @@ export default function Schedules() {
       {showCopyPanel && (
         <div className="card space-y-4">
           <div>
-            <h2 className="font-semibold">Copy Day to Other Days</h2>
+            <h2 className="font-semibold">{t('schedules.copyDayButton')}</h2>
             <p className="text-xs text-slate-400 mt-1">
-              Already set up all the bells for one day? Copy that whole set straight onto other days instead of
-              re-creating each one — e.g. set up Monday once, then copy it onto Tuesday–Friday.
+              {t('schedules.copyPanelDesc')}
             </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs text-slate-400">Copy bells from</label>
+              <label className="text-xs text-slate-400">{t('schedules.copyFromLabel')}</label>
               <select
                 className="input-field"
                 value={copySourceDay}
@@ -219,7 +262,7 @@ export default function Schedules() {
               >
                 {DAY_NAMES.map((d, i) => (
                   <option key={d} value={i}>
-                    {d}
+                    {t(`common.days.${i}`)}
                   </option>
                 ))}
               </select>
@@ -227,9 +270,9 @@ export default function Schedules() {
 
             <div>
               <div className="flex items-center justify-between">
-                <label className="text-xs text-slate-400">Copy to these days</label>
+                <label className="text-xs text-slate-400">{t('schedules.copyToLabel')}</label>
                 <button type="button" className="text-xs text-primary-600 hover:underline" onClick={selectWeekdayTargets}>
-                  Select Mon–Fri
+                  {t('schedules.selectWeekdays')}
                 </button>
               </div>
               <div className="flex flex-wrap gap-2 mt-1">
@@ -249,7 +292,7 @@ export default function Schedules() {
                         checked={copyTargetDays.includes(i)}
                         onChange={() => toggleCopyTargetDay(i)}
                       />
-                      {d}
+                      {t(`common.days.${i}`)}
                     </label>
                   )
                 )}
@@ -261,7 +304,7 @@ export default function Schedules() {
 
           <div className="flex gap-2">
             <button className="btn-primary" disabled={copying} onClick={copyDayToOtherDays}>
-              {copying ? 'Copying...' : 'Copy'}
+              {copying ? t('schedules.copying') : t('schedules.copy')}
             </button>
             <button
               className="btn-secondary"
@@ -270,7 +313,7 @@ export default function Schedules() {
                 setCopyResult('');
               }}
             >
-              Cancel
+              {t('common.cancel')}
             </button>
           </div>
         </div>
@@ -280,7 +323,7 @@ export default function Schedules() {
         <div className="card grid grid-cols-1 sm:grid-cols-4 gap-3">
           <input
             className="input-field sm:col-span-2"
-            placeholder="Title (e.g. Period 1 Start)"
+            placeholder={t('schedules.titlePlaceholder')}
             value={form.title ?? ''}
             onChange={(e) => setForm({ ...form, title: e.target.value })}
           />
@@ -291,7 +334,7 @@ export default function Schedules() {
           >
             {DAY_NAMES.map((d, i) => (
               <option key={d} value={i}>
-                {d}
+                {t(`common.days.${i}`)}
               </option>
             ))}
           </select>
@@ -306,7 +349,7 @@ export default function Schedules() {
             value={form.sound_id ?? ''}
             onChange={(e) => setForm({ ...form, sound_id: e.target.value ? Number(e.target.value) : null })}
           >
-            <option value="">— No sound selected —</option>
+            <option value="">{t('schedules.noSoundSelected')}</option>
             {sounds.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name}
@@ -318,26 +361,26 @@ export default function Schedules() {
             value={form.category}
             onChange={(e) => setForm({ ...form, category: e.target.value as Schedule['category'] })}
           >
-            <option value="class">Class</option>
-            <option value="break">Break</option>
-            <option value="assembly">Assembly</option>
-            <option value="exam">Exam</option>
-            <option value="custom">Custom</option>
+            <option value="class">{t('schedules.categoryClass')}</option>
+            <option value="break">{t('schedules.categoryBreak')}</option>
+            <option value="assembly">{t('schedules.categoryAssembly')}</option>
+            <option value="exam">{t('schedules.categoryExam')}</option>
+            <option value="custom">{t('schedules.categoryCustom')}</option>
           </select>
           <select
             className="input-field"
             value={form.is_active}
             onChange={(e) => setForm({ ...form, is_active: Number(e.target.value) as 0 | 1 })}
           >
-            <option value={1}>Active</option>
-            <option value={0}>Inactive</option>
+            <option value={1}>{t('common.active')}</option>
+            <option value={0}>{t('common.inactive')}</option>
           </select>
           <div className="flex gap-2 sm:col-span-4">
             <button className="btn-primary" onClick={save}>
-              Save
+              {t('common.save')}
             </button>
             <button className="btn-secondary" onClick={() => setShowForm(false)}>
-              Cancel
+              {t('common.cancel')}
             </button>
           </div>
         </div>
@@ -345,7 +388,7 @@ export default function Schedules() {
 
       {sounds.length === 0 && (
         <div className="card text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
-          ⚠️ No sounds uploaded yet. Go to <strong>Bell Sounds</strong> page and upload an audio file first, then assign it to a schedule.
+          ⚠️ {t('schedules.noSoundsWarningPart1')} <strong>{t('nav.sounds')}</strong> {t('schedules.noSoundsWarningPart2')}
         </div>
       )}
 
@@ -353,12 +396,12 @@ export default function Schedules() {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-slate-400 border-b border-slate-100 dark:border-slate-700">
-              <th className="py-2">Title</th>
-              <th>Day</th>
-              <th>Time</th>
-              <th>Sound</th>
-              <th>Category</th>
-              <th>Status</th>
+              <th className="py-2">{t('schedules.colTitle')}</th>
+              <th>{t('schedules.colDay')}</th>
+              <th>{t('schedules.colTime')}</th>
+              <th>{t('schedules.colSound')}</th>
+              <th>{t('schedules.colCategory')}</th>
+              <th>{t('schedules.colStatus')}</th>
               <th></th>
             </tr>
           </thead>
@@ -368,10 +411,10 @@ export default function Schedules() {
               return (
                 <tr key={s.id}>
                   <td className="py-3 font-medium">{s.title}</td>
-                  <td>{DAY_NAMES[s.day_of_week]}</td>
+                  <td>{t(`common.days.${s.day_of_week}`)}</td>
                   <td className="font-mono">{formatTime(s.ring_time)}</td>
                   <td className={sound ? '' : 'text-rose-400 text-xs'}>
-                    {sound ? sound.name : '⚠ No sound'}
+                    {sound ? sound.name : `⚠ ${t('schedules.noSound')}`}
                   </td>
                   <td className="capitalize">{s.category}</td>
                   <td>
@@ -384,7 +427,7 @@ export default function Schedules() {
                       }`}
                     >
                       {s.is_active ? <ToggleRight size={12} /> : <ToggleLeft size={12} />}
-                      {s.is_active ? 'Active' : 'Inactive'}
+                      {s.is_active ? t('common.active') : t('common.inactive')}
                     </button>
                   </td>
                   <td className="flex gap-2 justify-end py-2">
@@ -401,7 +444,7 @@ export default function Schedules() {
             {schedules.length === 0 && (
               <tr>
                 <td colSpan={7} className="py-8 text-center text-slate-400">
-                  No schedules yet. Click "Add Schedule" to create one.
+                  {t('schedules.emptyState')}
                 </td>
               </tr>
             )}

@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus, Trash2 } from 'lucide-react';
 import type { Holiday } from '@/types';
 
 export default function Holidays() {
+  const { t } = useTranslation();
   const [holidays, setHolidays] = useState<Holiday[]>([]);
   const [form, setForm] = useState({ title: '', date: '', type: 'school' as Holiday['type'] });
 
@@ -29,12 +31,12 @@ export default function Holidays() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Holiday Management</h1>
+      <h1 className="text-2xl font-bold">{t('holidays.pageTitle')}</h1>
 
       <div className="card grid grid-cols-1 sm:grid-cols-4 gap-3">
         <input
           className="input-field sm:col-span-2"
-          placeholder="Holiday title"
+          placeholder={t('holidays.titlePlaceholder')}
           value={form.title}
           onChange={(e) => setForm({ ...form, title: e.target.value })}
         />
@@ -49,12 +51,12 @@ export default function Holidays() {
           value={form.type}
           onChange={(e) => setForm({ ...form, type: e.target.value as Holiday['type'] })}
         >
-          <option value="school">School</option>
-          <option value="public">Public</option>
-          <option value="exception">Exception</option>
+          <option value="school">{t('holidays.typeSchool')}</option>
+          <option value="public">{t('holidays.typePublic')}</option>
+          <option value="exception">{t('holidays.typeException')}</option>
         </select>
         <button className="btn-primary flex items-center gap-2 justify-center sm:col-span-4" onClick={add}>
-          <Plus size={16} /> Add Holiday
+          <Plus size={16} /> {t('holidays.addHoliday')}
         </button>
       </div>
 
@@ -65,7 +67,7 @@ export default function Holidays() {
               <div>
                 <p className="font-medium">{h.title}</p>
                 <p className="text-xs text-slate-400">
-                  {h.date} · <span className="capitalize">{h.type}</span>
+                  {h.date} · <span className="capitalize">{t(`holidays.type${h.type.charAt(0).toUpperCase()}${h.type.slice(1)}`)}</span>
                 </p>
               </div>
               <button onClick={() => remove(h.id)} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-rose-500">
