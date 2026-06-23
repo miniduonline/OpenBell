@@ -11,7 +11,7 @@ interface HeaderProps {
 
 export default function Header({ onLock }: HeaderProps) {
   const { theme, toggleTheme, toggleSidebar, language, setLanguage } = useAppStore();
-  const { i18n, t } = useTranslation();
+  const { i18n } = useTranslation();
   const [passwordEnabled, setPasswordEnabled] = useState(false);
   const [schoolName, setSchoolName] = useState('');
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
