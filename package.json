@@ -1,6 +1,6 @@
 {
   "name": "openbell",
-  "version": "1.17.0",
+  "version": "1.18.0",
   "description": "OpenBell - Modern Cross-Platform School Bell Management System",
   "main": "dist-electron/main.js",
   "author": {

@@ -2,15 +2,9 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@/store/useStore';
-import { Check, Copy, ShieldCheck, ShieldOff, ExternalLink, Trash2, Network, RefreshCw, Smartphone } from 'lucide-react';
+import { Check, Copy, ShieldCheck, ShieldOff, Trash2, Network, RefreshCw, Smartphone } from 'lucide-react';
 import type { Language } from '@/types';
 import { TIMEZONES } from '@/utils/timezones';
-
-// Page shown when the user clicks "Check for Updates". OpenBell no longer
-// auto-downloads/auto-installs updates in-app (see v1.9.0 changelog) - the
-// button simply opens the GitHub releases page in the system browser so the
-// user can see what's new and grab the installer manually if they want it.
-const UPDATE_CHECK_URL = 'https://github.com/miniduonline/OpenBell/releases';
 
 interface SettingRow {
   key: string;
@@ -365,13 +359,6 @@ export default function Settings() {
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [resetPw, setResetPw] = useState('');
   const [resetPwError, setResetPwError] = useState('');
-
-  // Opens the GitHub releases page in the system browser. No in-app
-  // auto-updater anymore — this just lets the user check what the latest
-  // version is and download it themselves if they want it.
-  const handleCheckForUpdates = () => {
-    window.openbell?.openExternal(UPDATE_CHECK_URL);
-  };
 
   const performReset = async (password: string | null) => {
     setResetting(true);
@@ -791,24 +778,23 @@ export default function Settings() {
         )}
       </div>
 
-      {/* New v1.2.0 Features */}
-      <div className="card space-y-4">
-        <h2 className="font-semibold flex items-center gap-2">{t('settings.systemMaintenance')}</h2>
-        <p className="text-xs text-slate-400">{t('settings.systemMaintenanceDesc')}</p>
+      {/* Destructive, irreversible actions live here and only here - kept
+          visually separate (red accents) from the rest of Settings so
+          nobody clicks this by mistake while skimming for something else. */}
+      <div className="card space-y-4 border border-rose-200 dark:border-rose-900/50">
+        <h2 className="font-semibold flex items-center gap-2 text-rose-600 dark:text-rose-400">
+          {t('settings.dangerZone')}
+        </h2>
+        <p className="text-xs text-slate-400">{t('settings.dangerZoneDesc')}</p>
 
         <div className="flex flex-wrap gap-3">
-          <button className="btn-secondary flex items-center gap-2" onClick={handleCheckForUpdates}>
-            <ExternalLink size={16} />
-            Check for Updates
-          </button>
-
           <button
             className="btn-secondary text-rose-600 flex items-center gap-2"
             disabled={resetting}
             onClick={handleFullReset}
           >
             <Trash2 size={16} />
-            {resetting ? 'Resetting...' : 'Full Database Reset'}
+            {resetting ? t('settings.resetting') : t('settings.fullDatabaseReset')}
           </button>
         </div>
       </div>

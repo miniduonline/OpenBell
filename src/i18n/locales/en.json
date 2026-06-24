@@ -98,7 +98,11 @@
     "confirmDisable": "Confirm Disable",
     "systemMaintenance": "System Maintenance",
     "systemMaintenanceDesc": "Updates and full data reset",
-    "forgotPasswordHint": "Forgot the password later? On the lock screen, tap \"Forgot password?\" and enter the recovery code shown above to set a new one."
+    "forgotPasswordHint": "Forgot the password later? On the lock screen, tap \"Forgot password?\" and enter the recovery code shown above to set a new one.",
+    "dangerZone": "Danger Zone",
+    "dangerZoneDesc": "Irreversible actions. There's no undo button for anything here.",
+    "fullDatabaseReset": "Full Database Reset",
+    "resetting": "Resetting..."
   },
   "support": {
     "intro": "Need help with OpenBell? Reach out to the developer directly using the contact details below.",

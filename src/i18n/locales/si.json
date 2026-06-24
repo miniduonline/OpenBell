@@ -98,7 +98,11 @@
     "confirmDisable": "Disable කරන්න Confirm කරන්න",
     "systemMaintenance": "System Maintenance",
     "systemMaintenanceDesc": "Updates සහ full data reset",
-    "forgotPasswordHint": "පස්සේ password එක memory ඉඳලා ගියොත්? Lock screen එකේ \"Forgot password?\" tap කරලා, උඩින් පෙන්නපු recovery code එක දාලා අලුත් password එකක් set කරගන්න."
+    "forgotPasswordHint": "පස්සේ password එක memory ඉඳලා ගියොත්? Lock screen එකේ \"Forgot password?\" tap කරලා, උඩින් පෙන්නපු recovery code එක දාලා අලුත් password එකක් set කරගන්න.",
+    "dangerZone": "Danger Zone",
+    "dangerZoneDesc": "මේවා undo කරගන්න බැහැ. මෙතන තියෙන කිසිම දෙයකට undo button එකක් නැහැ.",
+    "fullDatabaseReset": "Database එක සම්පූර්ණයෙන්ම Reset කරන්න",
+    "resetting": "Reset කරනවා..."
   },
   "support": {
     "intro": "OpenBell එක්ක උදව්වක් ඕනේද? පහත සම්බන්ධතා විස්තර භාවිතා කරලා සෘජුවම developer ව සම්බන්ධ කරගන්න.",
