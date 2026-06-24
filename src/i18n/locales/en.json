@@ -47,7 +47,8 @@
       "Thursday",
       "Friday",
       "Saturday"
-    ]
+    ],
+    "undo": "Undo"
   },
   "settings": {
     "general": "General",
@@ -177,7 +178,14 @@
     "noBellsSetForDay": "No bells are set for {{day}} yet — nothing to copy.",
     "copiedSummary": "✅ Copied {{count}} bell(s) from {{from}} to {{days}} day(s).",
     "copySkippedSuffix": "({{skipped}} already existed and were skipped.)",
-    "copyFailed": "❌ Copy failed. Please try again."
+    "copyFailed": "❌ Copy failed. Please try again.",
+    "searchLabel": "Search",
+    "searchPlaceholder": "Search by title...",
+    "allDays": "All days",
+    "allCategories": "All categories",
+    "showingCount": "Showing {{count}} of {{total}}",
+    "noMatchingSchedules": "No schedules match these filters.",
+    "deletedMessage": "Deleted \"{{title}}\""
   },
   "sounds": {
     "confirmDelete": "Delete this sound? Any schedules using it will lose their sound assignment.",
@@ -186,7 +194,8 @@
     "emptyStatePart2": "to add an MP3 or WAV file.",
     "previewSound": "Preview sound",
     "deleteSound": "Delete sound",
-    "volume": "Volume"
+    "volume": "Volume",
+    "deletedMessage": "Deleted \"{{name}}\""
   },
   "holidays": {
     "pageTitle": "Holiday Management",
@@ -194,7 +203,8 @@
     "typeSchool": "School",
     "typePublic": "Public",
     "typeException": "Exception",
-    "addHoliday": "Add Holiday"
+    "addHoliday": "Add Holiday",
+    "deletedMessage": "Deleted \"{{title}}\""
   },
   "reports": {
     "pageTitle": "Reports & Activity Log",

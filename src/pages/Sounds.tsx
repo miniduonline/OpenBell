@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Play, Upload, Trash2 } from 'lucide-react';
 import type { Sound } from '@/types';
+import { useUndoableDelete } from '@/hooks/useUndoableDelete';
+import UndoSnackbar from '@/components/UndoSnackbar';
 
 export default function Sounds() {
   const { t } = useTranslation();
@@ -35,10 +37,18 @@ export default function Sounds() {
     setTimeout(() => setPreviewingId((id) => (id === s.id ? null : id)), 3000);
   };
 
-  const remove = async (id: number) => {
-    if (!confirm(t('sounds.confirmDelete'))) return;
-    await window.openbell.run('DELETE FROM sounds WHERE id = ?', [id]);
-    load();
+  const { pendingItem: pendingDelete, scheduleDelete, undo, undoWindowMs } = useUndoableDelete<Sound>(
+    async (item) => {
+      await window.openbell.run('DELETE FROM sounds WHERE id = ?', [item.id]);
+    }
+  );
+
+  const remove = (s: Sound) => {
+    scheduleDelete(
+      s,
+      (item) => setSounds((prev) => prev.filter((x) => x.id !== item.id)),
+      (item) => setSounds((prev) => [item, ...prev])
+    );
   };
 
   const setVolume = async (id: number, volume: number) => {
@@ -81,7 +91,7 @@ export default function Sounds() {
                   <Play size={14} />
                 </button>
                 <button
-                  onClick={() => remove(s.id)}
+                  onClick={() => remove(s)}
                   className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-rose-500"
                   title={t('sounds.deleteSound')}
                 >
@@ -105,6 +115,15 @@ export default function Sounds() {
           </div>
         ))}
       </div>
+
+      {pendingDelete && (
+        <UndoSnackbar
+          message={t('sounds.deletedMessage', { name: pendingDelete.name })}
+          durationMs={undoWindowMs}
+          undoLabel={t('common.undo')}
+          onUndo={() => undo((item) => setSounds((prev) => [item, ...prev]))}
+        />
+      )}
     </div>
   );
 }

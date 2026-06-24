@@ -1,5 +1,5 @@
 OpenBell Software License Agreement
-Version 1.18.0
+Version 2.0.0
 
 Copyright (c) 2026 Minidu Shashimal Aluthge
 PastelDev

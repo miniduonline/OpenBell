@@ -47,7 +47,8 @@
       "බ්‍රහස්පතින්දා",
       "සිකුරාදා",
       "සෙනසුරාදා"
-    ]
+    ],
+    "undo": "Undo"
   },
   "settings": {
     "general": "සාමාන්‍ය",
@@ -177,7 +178,14 @@
     "noBellsSetForDay": "{{day}} ට bells set කරලා නැහැ — copy කරගන්න දෙයක් නැහැ.",
     "copiedSummary": "✅ {{from}} ඉඳන් day {{days}} කට bells {{count}} ක් copy උනා.",
     "copySkippedSuffix": "({{skipped}} ක් already තිබුණා, ඒවා skip කරා.)",
-    "copyFailed": "❌ Copy fail උනා. ආයෙත් try කරන්න."
+    "copyFailed": "❌ Copy fail උනා. ආයෙත් try කරන්න.",
+    "searchLabel": "Search",
+    "searchPlaceholder": "Title එකෙන් search කරන්න...",
+    "allDays": "සියලුම days",
+    "allCategories": "සියලුම categories",
+    "showingCount": "{{total}} කින් {{count}} ක් පෙන්වනවා",
+    "noMatchingSchedules": "මේ filters වලට schedules හමු වුණේ නැහැ.",
+    "deletedMessage": "\"{{title}}\" Delete උනා"
   },
   "sounds": {
     "confirmDelete": "මේ sound එක Delete කරන්නද? මේක use කරන schedules වල sound assignment එක නැතිවෙයි.",
@@ -186,7 +194,8 @@
     "emptyStatePart2": "click කරලා MP3 හරි WAV file එකක් add කරන්න.",
     "previewSound": "Sound එක Preview කරන්න",
     "deleteSound": "Sound එක Delete කරන්න",
-    "volume": "Volume"
+    "volume": "Volume",
+    "deletedMessage": "\"{{name}}\" Delete උනා"
   },
   "holidays": {
     "pageTitle": "Holiday Management",
@@ -194,7 +203,8 @@
     "typeSchool": "School",
     "typePublic": "Public",
     "typeException": "Exception",
-    "addHoliday": "Holiday එකක් Add කරන්න"
+    "addHoliday": "Holiday එකක් Add කරන්න",
+    "deletedMessage": "\"{{title}}\" Delete උනා"
   },
   "reports": {
     "pageTitle": "Reports & Activity Log",

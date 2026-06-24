@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Trash2 } from 'lucide-react';
 import type { Holiday } from '@/types';
+import { useUndoableDelete } from '@/hooks/useUndoableDelete';
+import UndoSnackbar from '@/components/UndoSnackbar';
 
 export default function Holidays() {
   const { t } = useTranslation();
@@ -24,9 +26,18 @@ export default function Holidays() {
     load();
   };
 
-  const remove = async (id: number) => {
-    await window.openbell.run('DELETE FROM holidays WHERE id = ?', [id]);
-    load();
+  const { pendingItem: pendingDelete, scheduleDelete, undo, undoWindowMs } = useUndoableDelete<Holiday>(
+    async (item) => {
+      await window.openbell.run('DELETE FROM holidays WHERE id = ?', [item.id]);
+    }
+  );
+
+  const remove = (h: Holiday) => {
+    scheduleDelete(
+      h,
+      (item) => setHolidays((prev) => prev.filter((x) => x.id !== item.id)),
+      (item) => setHolidays((prev) => [...prev, item].sort((a, b) => a.date.localeCompare(b.date)))
+    );
   };
 
   return (
@@ -70,13 +81,24 @@ export default function Holidays() {
                   {h.date} · <span className="capitalize">{t(`holidays.type${h.type.charAt(0).toUpperCase()}${h.type.slice(1)}`)}</span>
                 </p>
               </div>
-              <button onClick={() => remove(h.id)} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-rose-500">
+              <button onClick={() => remove(h)} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-rose-500">
                 <Trash2 size={14} />
               </button>
             </li>
           ))}
         </ul>
       </div>
+
+      {pendingDelete && (
+        <UndoSnackbar
+          message={t('holidays.deletedMessage', { title: pendingDelete.title })}
+          durationMs={undoWindowMs}
+          undoLabel={t('common.undo')}
+          onUndo={() =>
+            undo((item) => setHolidays((prev) => [...prev, item].sort((a, b) => a.date.localeCompare(b.date))))
+          }
+        />
+      )}
     </div>
   );
 }

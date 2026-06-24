@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, Pencil, ToggleLeft, ToggleRight, Copy } from 'lucide-react';
+import { useUndoableDelete } from '@/hooks/useUndoableDelete';
+import UndoSnackbar from '@/components/UndoSnackbar';
 import type { Schedule, Sound } from '@/types';
 import { DAY_NAMES, formatTime } from '@/utils/format';
 
@@ -24,6 +26,21 @@ export default function Schedules() {
   const [form, setForm] = useState<Partial<Schedule>>(emptyForm);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [showForm, setShowForm] = useState(false);
+
+  // ---- Search & filter (handy once there are 10+ periods) ------------------------
+  const [searchText, setSearchText] = useState('');
+  const [dayFilter, setDayFilter] = useState<string>('all');
+  const [categoryFilterValue, setCategoryFilterValue] = useState<string>('all');
+
+  const filteredSchedules = useMemo(() => {
+    return schedules.filter((s) => {
+      if (dayFilter !== 'all' && String(s.day_of_week) !== dayFilter) return false;
+      if (categoryFilterValue !== 'all' && s.category !== categoryFilterValue) return false;
+      if (searchText.trim() && !s.title.toLowerCase().includes(searchText.trim().toLowerCase())) return false;
+      return true;
+    });
+  }, [schedules, dayFilter, categoryFilterValue, searchText]);
+
 
   // ---- Copy a day's bells to other days ------------------------------------------
   // Lets the user set up one day (e.g. Monday) and then reuse that whole set
@@ -114,9 +131,17 @@ export default function Schedules() {
     load();
   };
 
-  const remove = async (id: number) => {
-    await window.openbell.run('DELETE FROM schedules WHERE id = ?', [id]);
-    load();
+  const { pendingItem: pendingDelete, scheduleDelete, undo, undoWindowMs } = useUndoableDelete<Schedule>(    async (item) => {
+      await window.openbell.run('DELETE FROM schedules WHERE id = ?', [item.id]);
+    }
+  );
+
+  const remove = (s: Schedule) => {
+    scheduleDelete(
+      s,
+      (item) => setSchedules((prev) => prev.filter((x) => x.id !== item.id)),
+      (item) => setSchedules((prev) => [...prev, item].sort((a, b) => a.ring_time.localeCompare(b.ring_time)))
+    );
   };
 
   const edit = (s: Schedule) => {
@@ -392,6 +417,60 @@ export default function Schedules() {
         </div>
       )}
 
+      <div className="card flex flex-wrap gap-3 items-end">
+        <div className="flex flex-col gap-1 flex-1 min-w-[160px]">
+          <label className="text-xs text-slate-400">{t('schedules.searchLabel')}</label>
+          <input
+            type="text"
+            className="input-field"
+            placeholder={t('schedules.searchPlaceholder')}
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs text-slate-400">{t('schedules.colDay')}</label>
+          <select className="input-field" value={dayFilter} onChange={(e) => setDayFilter(e.target.value)}>
+            <option value="all">{t('schedules.allDays')}</option>
+            {DAY_NAMES.map((_, i) => (
+              <option key={i} value={i}>
+                {t(`common.days.${i}`)}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs text-slate-400">{t('schedules.colCategory')}</label>
+          <select
+            className="input-field"
+            value={categoryFilterValue}
+            onChange={(e) => setCategoryFilterValue(e.target.value)}
+          >
+            <option value="all">{t('schedules.allCategories')}</option>
+            <option value="class">{t('schedules.categoryClass')}</option>
+            <option value="break">{t('schedules.categoryBreak')}</option>
+            <option value="assembly">{t('schedules.categoryAssembly')}</option>
+            <option value="exam">{t('schedules.categoryExam')}</option>
+            <option value="custom">{t('schedules.categoryCustom')}</option>
+          </select>
+        </div>
+        {(searchText || dayFilter !== 'all' || categoryFilterValue !== 'all') && (
+          <button
+            className="btn-secondary"
+            onClick={() => {
+              setSearchText('');
+              setDayFilter('all');
+              setCategoryFilterValue('all');
+            }}
+          >
+            {t('reports.reset')}
+          </button>
+        )}
+        <p className="text-xs text-slate-400 ml-auto">
+          {t('schedules.showingCount', { count: filteredSchedules.length, total: schedules.length })}
+        </p>
+      </div>
+
       <div className="card overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -406,7 +485,7 @@ export default function Schedules() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-            {schedules.map((s) => {
+            {filteredSchedules.map((s) => {
               const sound = sounds.find((snd) => snd.id === s.sound_id);
               return (
                 <tr key={s.id}>
@@ -434,23 +513,36 @@ export default function Schedules() {
                     <button onClick={() => edit(s)} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">
                       <Pencil size={14} />
                     </button>
-                    <button onClick={() => remove(s.id)} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-rose-500">
+                    <button onClick={() => remove(s)} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-rose-500">
                       <Trash2 size={14} />
                     </button>
                   </td>
                 </tr>
               );
             })}
-            {schedules.length === 0 && (
+            {filteredSchedules.length === 0 && (
               <tr>
                 <td colSpan={7} className="py-8 text-center text-slate-400">
-                  {t('schedules.emptyState')}
+                  {schedules.length === 0 ? t('schedules.emptyState') : t('schedules.noMatchingSchedules')}
                 </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
+
+      {pendingDelete && (
+        <UndoSnackbar
+          message={t('schedules.deletedMessage', { title: pendingDelete.title })}
+          durationMs={undoWindowMs}
+          undoLabel={t('common.undo')}
+          onUndo={() =>
+            undo((item) =>
+              setSchedules((prev) => [...prev, item].sort((a, b) => a.ring_time.localeCompare(b.ring_time)))
+            )
+          }
+        />
+      )}
     </div>
   );
 }
