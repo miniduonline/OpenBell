@@ -113,7 +113,14 @@
     "shortcutNewSchedule": "Open the new schedule form",
     "shortcutSave": "Save the open form",
     "shortcutEsc": "Close the open form/panel",
-    "shortcutsScope": "These work while the Bell Schedules page is open."
+    "shortcutsScope": "These work while the Bell Schedules page is open.",
+    "updatesTitle": "Software Updates",
+    "lastChecked": "Last checked: {{time}}",
+    "neverChecked": "Never checked yet.",
+    "checking": "Checking...",
+    "checkForUpdates": "Check for Updates",
+    "upToDate": "You're on the latest version (v{{version}}).",
+    "newVersionFound": "A new version is available: v{{version}}"
   },
   "wizard": {
     "welcomeTitle": "Welcome to OpenBell",
@@ -241,5 +248,11 @@
     "recoveryCodeNoticeNew": "new",
     "recoveryCodeNoticePart2": "recovery code — save it somewhere safe. The old code no longer works, and this one will not be shown again.",
     "continueToApp": "Continue to OpenBell"
+  },
+  "update": {
+    "available": "🎉 OpenBell v{{version}} is available (you have v{{current}}).",
+    "viewRelease": "View release",
+    "remindLater": "Remind me later",
+    "skipVersion": "Skip this version"
   }
 }

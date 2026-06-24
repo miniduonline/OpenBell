@@ -113,7 +113,14 @@
     "shortcutNewSchedule": "புதிய அட்டவணை படிவத்தைத் திறக்கவும்",
     "shortcutSave": "திறந்த படிவத்தைச் சேமிக்கவும்",
     "shortcutEsc": "திறந்த படிவம்/panel ஐ மூடவும்",
-    "shortcutsScope": "Bell Schedules பக்கம் திறந்திருக்கும்போது இவை செயல்படும்."
+    "shortcutsScope": "Bell Schedules பக்கம் திறந்திருக்கும்போது இவை செயல்படும்.",
+    "updatesTitle": "Software புதுப்பிப்புகள்",
+    "lastChecked": "கடைசியாக சரிபார்க்கப்பட்டது: {{time}}",
+    "neverChecked": "இன்னும் சரிபார்க்கப்படவில்லை.",
+    "checking": "சரிபார்க்கிறது...",
+    "checkForUpdates": "புதுப்பிப்புகளைச் சரிபார்க்கவும்",
+    "upToDate": "நீங்கள் சமீபத்திய பதிப்பில் உள்ளீர்கள் (v{{version}}).",
+    "newVersionFound": "புதிய பதிப்பு கிடைக்கிறது: v{{version}}"
   },
   "wizard": {
     "welcomeTitle": "OpenBell க்கு வரவேற்கிறோம்",
@@ -241,5 +248,11 @@
     "recoveryCodeNoticeNew": "புதிய",
     "recoveryCodeNoticePart2": "மீட்பு குறியீடு — பாதுகாப்பான இடத்தில் சேமிக்கவும். பழைய குறியீடு இனி வேலை செய்யாது, இது மீண்டும் காட்டப்படாது.",
     "continueToApp": "OpenBell க்குத் தொடரவும்"
+  },
+  "update": {
+    "available": "🎉 OpenBell v{{version}} கிடைக்கிறது (உங்களிடம் v{{current}} உள்ளது).",
+    "viewRelease": "வெளியீட்டைப் பார்க்கவும்",
+    "remindLater": "பின்னர் நினைவூட்டவும்",
+    "skipVersion": "இந்த பதிப்பைத் தவிர்க்கவும்"
   }
 }

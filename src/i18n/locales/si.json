@@ -113,7 +113,14 @@
     "shortcutNewSchedule": "අලුත් schedule form එක open කරනවා",
     "shortcutSave": "Open form එක save කරනවා",
     "shortcutEsc": "Open form/panel එක close කරනවා",
-    "shortcutsScope": "Bell Schedules page එක open ව තියෙද්දි මේවා වැඩ කරයි."
+    "shortcutsScope": "Bell Schedules page එක open ව තියෙද්දි මේවා වැඩ කරයි.",
+    "updatesTitle": "Software Updates",
+    "lastChecked": "අන්තිමට check කරේ: {{time}}",
+    "neverChecked": "තාම check කරලා නැහැ.",
+    "checking": "Check කරනවා...",
+    "checkForUpdates": "Updates Check කරන්න",
+    "upToDate": "ඔයා තියෙන්නේ latest version එකේ (v{{version}}).",
+    "newVersionFound": "අලුත් version එකක් තියෙනවා: v{{version}}"
   },
   "wizard": {
     "welcomeTitle": "OpenBell එකට Welcome",
@@ -241,5 +248,11 @@
     "recoveryCodeNoticeNew": "අලුත්",
     "recoveryCodeNoticePart2": "recovery code එක — safe තැනක save කරගන්න. පරණ code එක දැන් වැඩ කරන්නේ නැහැ, මේක ආයෙත් පෙන්නන්නේ නැහැ.",
     "continueToApp": "OpenBell එකට Continue කරන්න"
+  },
+  "update": {
+    "available": "🎉 OpenBell v{{version}} ලැබෙන්න තියෙනවා (ඔයාට දැන් තියෙන්නේ v{{current}}).",
+    "viewRelease": "Release එක බලන්න",
+    "remindLater": "පස්සේ මතක් කරන්න",
+    "skipVersion": "මේ version එක Skip කරන්න"
   }
 }

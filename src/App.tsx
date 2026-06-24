@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
@@ -13,62 +14,42 @@ import Backup from '@/pages/Backup';
 import Settings from '@/pages/Settings';
 import Support from '@/pages/Support';
 import { useTheme } from '@/hooks/useTheme';
+import { checkForUpdates, shouldAutoCheck, isVersionSkipped, skipVersion, snoozeUpdateCheck } from '@/utils/updateChecker';
+import type { UpdateCheckResult } from '@/utils/updateChecker';
 
 export default function App() {
   useTheme();
+  const { t } = useTranslation();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [locked, setLocked] = useState(false);
   const [setupChecked, setSetupChecked] = useState(false);
   const [setupCompleted, setSetupCompleted] = useState(true);
-  const [updateAvailable, setUpdateAvailable] = useState<{ version: string; url: string } | null>(null);
+  const [updateAvailable, setUpdateAvailable] = useState<UpdateCheckResult | null>(null);
 
-  // Once a day, check GitHub Releases for a newer version than what's
-  // currently installed. This is a plain read-only GET request to a
-  // public API endpoint - no telemetry, no accounts, nothing is sent
-  // about this PC or school. If there's no internet, this just silently
-  // does nothing (fails quietly, never blocks the app from working).
+  // Once a day, silently check GitHub Releases for a newer version than
+  // what's currently installed. Same logic as the manual "Check for
+  // Updates" button in Support settings - see src/utils/updateChecker.ts.
+  // No telemetry, no accounts; a single anonymous GET to a public API.
+  // If there's no internet, this fails quietly and never blocks the app.
   useEffect(() => {
     if (!window.openbell) return;
+    if (!shouldAutoCheck(24)) return;
 
-    const dismissedVersion = localStorage.getItem('openbell-update-dismissed');
-    const lastCheck = Number(localStorage.getItem('openbell-update-lastcheck') ?? '0');
-    const oneDayMs = 24 * 60 * 60 * 1000;
-    if (Date.now() - lastCheck < oneDayMs) return;
-
-    (async () => {
-      try {
-        const currentVersion = await window.openbell.getVersion();
-        const res = await fetch('https://api.github.com/repos/miniduonline/OpenBell/releases/latest');
-        if (!res.ok) return;
-        const data = await res.json();
-        const latestVersion = String(data.tag_name ?? '').replace(/^v/, '');
-        if (!latestVersion) return;
-
-        localStorage.setItem('openbell-update-lastcheck', String(Date.now()));
-
-        const isNewer = (a: string, b: string) => {
-          const pa = a.split('.').map(Number);
-          const pb = b.split('.').map(Number);
-          for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
-            if ((pa[i] ?? 0) > (pb[i] ?? 0)) return true;
-            if ((pa[i] ?? 0) < (pb[i] ?? 0)) return false;
-          }
-          return false;
-        };
-
-        if (isNewer(latestVersion, currentVersion) && latestVersion !== dismissedVersion) {
-          setUpdateAvailable({ version: latestVersion, url: data.html_url ?? '' });
-        }
-      } catch {
-        // No internet, or GitHub unreachable - just stay quiet.
+    checkForUpdates().then((outcome) => {
+      if (outcome.status === 'update-available' && !isVersionSkipped(outcome.data.latestVersion)) {
+        setUpdateAvailable(outcome.data);
       }
-    })();
+    });
   }, []);
 
-  const dismissUpdate = () => {
+  const dismissUpdate = (mode: 'skip' | 'later') => {
     if (updateAvailable) {
-      localStorage.setItem('openbell-update-dismissed', updateAvailable.version);
+      if (mode === 'skip') {
+        skipVersion(updateAvailable.latestVersion);
+      } else {
+        snoozeUpdateCheck(12);
+      }
     }
     setUpdateAvailable(null);
   };
@@ -257,19 +238,35 @@ const blob = new Blob([new Uint8Array(buffer)], { type: mime });
         <Sidebar />
         <div className="flex-1 flex flex-col">
           {updateAvailable && (
-            <div className="bg-primary-600 text-white text-sm px-4 py-2 flex items-center justify-between gap-3">
-              <span>
-                🎉 OpenBell v{updateAvailable.version} is available.{' '}
+            <div className="bg-primary-600 text-white text-sm px-4 py-2.5 flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex-1 min-w-[200px]">
+                <span>
+                  {t('update.available', {
+                    version: updateAvailable.latestVersion,
+                    current: updateAvailable.currentVersion,
+                  })}
+                </span>
+                {updateAvailable.releaseNotes && (
+                  <p className="text-xs opacity-90 mt-0.5">{updateAvailable.releaseNotes}</p>
+                )}
+              </div>
+              <div className="flex items-center gap-3 shrink-0">
                 <button
                   className="underline font-medium"
-                  onClick={() => window.openbell.openExternal(updateAvailable.url)}
+                  onClick={() => window.openbell.openExternal(updateAvailable.releaseUrl)}
                 >
-                  View release
+                  {t('update.viewRelease')}
                 </button>
-              </span>
-              <button onClick={dismissUpdate} className="opacity-80 hover:opacity-100 px-2">
-                ✕
-              </button>
+                <button className="opacity-90 hover:opacity-100" onClick={() => dismissUpdate('later')}>
+                  {t('update.remindLater')}
+                </button>
+                <button className="opacity-70 hover:opacity-100" onClick={() => dismissUpdate('skip')}>
+                  {t('update.skipVersion')}
+                </button>
+                <button onClick={() => setUpdateAvailable(null)} className="opacity-80 hover:opacity-100 px-1">
+                  ✕
+                </button>
+              </div>
             </div>
           )}
           {healthAlert && (
